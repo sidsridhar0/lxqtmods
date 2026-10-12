@@ -1,0 +1,17 @@
+# Local environment files
+.env
+.env.*
+!.env.example
+
+# Downloaded applications and generated launchers
+*.AppImage
+*.rpm
+*.deb
+helium.desktop
+
+# Local backups, editor files, and logs
+*.bak
+*.bak.*
+*~
+.DS_Store
+*.log

@@ -1,0 +1,55 @@
+LXQtPanel #BackgroundWidget {
+    background: rgba(17, 23, 30, 96%);
+    border-right: 1px solid #29333d;
+}
+
+QToolTip {
+    color: #e6edf3;
+    background: #202933;
+    border: 1px solid #394651;
+    padding: 5px 8px;
+}
+
+Plugin,
+LXQtPanelPlugin {
+    padding: 0;
+    spacing: 8px;
+    qproperty-moveMarkerColor: #43c7b6;
+}
+
+Plugin > QWidget,
+Plugin > QWidget > QWidget {
+    color: #e6edf3;
+}
+
+Plugin > QToolButton,
+Plugin > QWidget > QToolButton,
+Plugin > QWidget > QToolButton > QWidget > QToolButton,
+LXQtPanelPlugin > QToolButton {
+    color: #e6edf3;
+    border: 1px solid transparent;
+    border-radius: 8px;
+    margin: 2px 5px;
+    padding: 4px;
+    qproperty-iconSize: 24px;
+}
+
+Plugin > QToolButton:hover,
+Plugin > QWidget > QToolButton:hover,
+LXQtPanelPlugin > QToolButton:hover {
+    background: #26333d;
+    border-color: #394651;
+}
+
+Plugin > QToolButton:pressed,
+Plugin > QWidget > QToolButton:pressed,
+LXQtPanelPlugin > QToolButton:pressed {
+    background: #30444d;
+}
+
+Plugin > QToolButton:checked,
+Plugin > QWidget > QToolButton:checked,
+LXQtPanelPlugin > QToolButton:checked {
+    color: #72d9cd;
+    background: #203a3d;
+}

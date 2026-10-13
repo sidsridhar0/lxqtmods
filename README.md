@@ -39,8 +39,9 @@ The theme adapts the reference dotfiles' rounded panels, bold outlines, mint
 accents, and monospaced typography to a dark graphite palette. Main settings
 live in `config/`; the custom Qt/GTK styles and wallpaper are under `assets/`.
 
-The dashboard is pinned to the top-left desktop and starts with Miriway. It
-uses the top layer so the desktop surface cannot cover it; it can remain above
+The dashboard is pinned to the top-left desktop and starts from LXQt autostart
+after the session is up, so a widget failure cannot take down Miriway. It uses
+the top layer so the desktop surface cannot cover it; it can remain above
 application windows. It shows live CPU and memory usage, an equalizer-style
 master-volume meter with a draggable volume slider, battery charge and status,
 and a persistent checklist.
@@ -70,8 +71,10 @@ both axes.
 The optional SDDM theme uses a dark graphite surface and mint accents. It is
 installed under `/usr/share/sddm/themes/Modern-Minimal` and selected by
 `/etc/sddm.conf.d/90-lxqtmods.conf`; the change applies at the next greeter
-start. These system-level steps are skipped with a clear message when deploy
-is run non-interactively.
+start. The theme uses only QtQuick primitives (no QtQuick.Controls or
+SddmComponents) and ships `metadata.desktop` so SDDM starts the Qt 6 greeter
+on Fedora. These system-level steps are skipped with a clear message when
+deploy is run non-interactively.
 
 ## Notes
 

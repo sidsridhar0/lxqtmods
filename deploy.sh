@@ -99,8 +99,9 @@ install -D -m 644 "$ROOT/assets/Modern-Minimal-Dark/gtk-3.0/gtk.css" \
     "$DATA_DIR/themes/Modern-Minimal-Dark/gtk-3.0/gtk.css"
 install -D -m 755 "$ROOT/display-mode.sh" "$HOME/.local/bin/lxqtmods-display-mode"
 install -D -m 755 "$ROOT/widgets/dashboard.py" "$DATA_DIR/lxqtmods/dashboard.py"
-install -d "$DATA_DIR/applications"
-cat > "$DATA_DIR/applications/lxqtmods-dashboard.desktop" <<EOF
+install -d "$DATA_DIR/applications" "$CONFIG_DIR/autostart"
+dashboard_desktop="$DATA_DIR/applications/lxqtmods-dashboard.desktop"
+cat > "$dashboard_desktop" <<EOF
 [Desktop Entry]
 Version=1.0
 Type=Application
@@ -111,7 +112,9 @@ Icon=utilities-system-monitor
 Terminal=false
 Categories=System;
 StartupWMClass=lxqtmods-dashboard
+OnlyShowIn=LXQt;
 EOF
+install -m 644 "$dashboard_desktop" "$CONFIG_DIR/autostart/lxqtmods-dashboard.desktop"
 
 display_config="$CONFIG_DIR/miriway-shell.display-config"
 backup_once "$display_config"
@@ -161,36 +164,32 @@ PY
 
 miriway_config="$CONFIG_DIR/lxqt/miriway-shell.config"
 backup_once "$miriway_config"
-python3 - "$miriway_config" "$DATA_DIR/lxqtmods/dashboard.py" <<'PY'
+python3 - "$miriway_config" <<'PY'
 import os
-import shlex
 import sys
 import tempfile
 
-config_file, dashboard = sys.argv[1:]
-os.makedirs(os.path.dirname(config_file), exist_ok=True)
+config_file = sys.argv[1]
 try:
     with open(config_file, encoding="utf-8") as stream:
         lines = stream.read().splitlines()
 except FileNotFoundError:
-    lines = []
+    raise SystemExit(0)
 
-lines = [
+filtered = [
     line for line in lines
     if not (
         line.startswith("shell-component=")
         and "lxqtmods/dashboard.py" in line
     )
 ]
-lines.append(
-    "shell-component="
-    + shlex.join(["python3", dashboard, "--desktop"])
-)
+if filtered == lines:
+    raise SystemExit(0)
 
 fd, temporary_file = tempfile.mkstemp(dir=os.path.dirname(config_file))
 try:
     with os.fdopen(fd, "w", encoding="utf-8") as stream:
-        stream.write("\n".join(lines) + "\n")
+        stream.write("\n".join(filtered) + "\n")
     os.replace(temporary_file, config_file)
 except BaseException:
     os.unlink(temporary_file)
@@ -267,6 +266,13 @@ if command -v sudo >/dev/null 2>&1 && [[ -t 0 ]]; then
         "$sddm_theme_dir/Main.qml"
     sudo install -m 644 "$ROOT/assets/sddm/Modern-Minimal/theme.conf" \
         "$sddm_theme_dir/theme.conf"
+    sudo install -m 644 "$ROOT/assets/sddm/Modern-Minimal/metadata.desktop" \
+        "$sddm_theme_dir/metadata.desktop"
+    if ! command -v sddm-greeter-qt6 >/dev/null 2>&1 \
+            && command -v sddm-greeter >/dev/null 2>&1; then
+        sudo sed -i 's/^QtVersion=6$/QtVersion=5/' \
+            "$sddm_theme_dir/metadata.desktop"
+    fi
     sudo install -D -m 644 "$ROOT/config/sddm.conf" \
         "$sddm_dropin"
 else

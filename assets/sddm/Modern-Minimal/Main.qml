@@ -1,7 +1,5 @@
 import QtQuick 2.15
-import QtQuick.Controls 2.15 as Controls
 import QtQuick.Layouts 1.15
-import SddmComponents 2.0
 
 Rectangle {
     id: root
@@ -10,6 +8,16 @@ Rectangle {
     property int selectedSession: sessionModel.lastIndex >= 0 ? sessionModel.lastIndex : 0
     property string message: ""
 
+    function sessionLabel() {
+        if (sessionModel.rowCount() <= 0)
+            return "Default session"
+        var modelIndex = sessionModel.index(root.selectedSession, 0)
+        var name = sessionModel.data(modelIndex, Qt.DisplayRole)
+        if (name === undefined || name === null || name === "")
+            name = sessionModel.data(modelIndex, Qt.UserRole + 2)
+        return name ? name : "Session " + (root.selectedSession + 1)
+    }
+
     function attemptLogin() {
         message = "Signing in…"
         sddm.login(username.text, password.text, selectedSession)
@@ -17,11 +25,13 @@ Rectangle {
 
     Connections {
         target: sddm
+
         function onLoginFailed() {
             root.message = "Sign-in failed. Check your password and try again."
-            password.clear()
+            password.text = ""
             password.forceActiveFocus()
         }
+
         function onInformationMessage(message) {
             root.message = message
         }
@@ -109,19 +119,37 @@ Rectangle {
                     font.family: "monospace"
                 }
 
-                Controls.TextField {
-                    id: username
+                Rectangle {
                     Layout.fillWidth: true
-                    text: userModel.lastUser
-                    placeholderText: "Username"
-                    color: "#eee9dc"
-                    selectByMouse: true
-                    font.pixelSize: 15
-                    background: Rectangle {
-                        radius: 10
-                        color: "#171b1b"
-                        border.color: username.activeFocus ? "#91d7cc" : "#414947"
-                        border.width: 2
+                    Layout.preferredHeight: 40
+                    radius: 10
+                    color: "#171b1b"
+                    border.color: username.activeFocus ? "#91d7cc" : "#414947"
+                    border.width: 2
+
+                    Text {
+                        anchors.fill: parent
+                        anchors.leftMargin: 12
+                        anchors.rightMargin: 12
+                        verticalAlignment: Text.AlignVCenter
+                        text: "Username"
+                        color: "#6d7c78"
+                        font.pixelSize: 15
+                        visible: username.text.length === 0
+                    }
+
+                    TextInput {
+                        id: username
+                        anchors.fill: parent
+                        anchors.leftMargin: 12
+                        anchors.rightMargin: 12
+                        verticalAlignment: TextInput.AlignVCenter
+                        text: userModel.lastUser
+                        color: "#eee9dc"
+                        clip: true
+                        selectByMouse: true
+                        font.pixelSize: 15
+                        KeyNavigation.tab: password
                     }
                 }
 
@@ -133,65 +161,88 @@ Rectangle {
                     font.family: "monospace"
                 }
 
-                Controls.TextField {
-                    id: password
+                Rectangle {
                     Layout.fillWidth: true
-                    placeholderText: "Password"
-                    echoMode: TextInput.Password
-                    color: "#eee9dc"
-                    selectByMouse: true
-                    font.pixelSize: 15
-                    onAccepted: root.attemptLogin()
-                    background: Rectangle {
-                        radius: 10
-                        color: "#171b1b"
-                        border.color: password.activeFocus ? "#91d7cc" : "#414947"
-                        border.width: 2
+                    Layout.preferredHeight: 40
+                    radius: 10
+                    color: "#171b1b"
+                    border.color: password.activeFocus ? "#91d7cc" : "#414947"
+                    border.width: 2
+
+                    Text {
+                        anchors.fill: parent
+                        anchors.leftMargin: 12
+                        anchors.rightMargin: 12
+                        verticalAlignment: Text.AlignVCenter
+                        text: "Password"
+                        color: "#6d7c78"
+                        font.pixelSize: 15
+                        visible: password.text.length === 0
+                    }
+
+                    TextInput {
+                        id: password
+                        anchors.fill: parent
+                        anchors.leftMargin: 12
+                        anchors.rightMargin: 12
+                        verticalAlignment: TextInput.AlignVCenter
+                        echoMode: TextInput.Password
+                        color: "#eee9dc"
+                        clip: true
+                        selectByMouse: true
+                        font.pixelSize: 15
+                        inputMethodHints: Qt.ImhHiddenText | Qt.ImhSensitiveData | Qt.ImhNoAutoUppercase
+                        KeyNavigation.tab: username
+                        KeyNavigation.backtab: username
+                        onAccepted: root.attemptLogin()
                     }
                 }
 
-                Controls.Button {
+                Rectangle {
                     id: sessionButton
                     Layout.fillWidth: true
-                    text: sessionModel.rowCount() > 0
-                          ? sessionModel.data(sessionModel.index(root.selectedSession, 0), Qt.DisplayRole)
-                          : "Default session"
-                    onClicked: {
-                        if (sessionModel.rowCount() > 0)
-                            root.selectedSession = (root.selectedSession + 1) % sessionModel.rowCount()
-                    }
-                    contentItem: Text {
-                        text: sessionButton.text + "  ·  change"
+                    Layout.preferredHeight: 34
+                    radius: 9
+                    color: sessionMouse.pressed ? "#353e3b" : "#292f2e"
+
+                    Text {
+                        anchors.centerIn: parent
+                        text: root.sessionLabel() + "  ·  change"
                         color: "#9baba7"
-                        horizontalAlignment: Text.AlignHCenter
-                        verticalAlignment: Text.AlignVCenter
                         font.pixelSize: 12
                         font.family: "monospace"
                     }
-                    background: Rectangle {
-                        radius: 9
-                        color: "#292f2e"
+
+                    MouseArea {
+                        id: sessionMouse
+                        anchors.fill: parent
+                        onClicked: {
+                            if (sessionModel.rowCount() > 0)
+                                root.selectedSession = (root.selectedSession + 1) % sessionModel.rowCount()
+                        }
                     }
                 }
 
-                Controls.Button {
+                Rectangle {
                     id: loginButton
                     Layout.fillWidth: true
                     Layout.topMargin: 5
-                    text: "Sign in"
-                    onClicked: root.attemptLogin()
-                    contentItem: Text {
-                        text: loginButton.text
+                    Layout.preferredHeight: 44
+                    radius: 10
+                    color: loginMouse.pressed ? "#79bdb3" : "#91d7cc"
+
+                    Text {
+                        anchors.centerIn: parent
+                        text: "Sign in"
                         color: "#111515"
-                        horizontalAlignment: Text.AlignHCenter
-                        verticalAlignment: Text.AlignVCenter
                         font.pixelSize: 15
                         font.bold: true
                     }
-                    background: Rectangle {
-                        radius: 10
-                        color: loginButton.down ? "#79bdb3" : "#91d7cc"
-                        implicitHeight: 44
+
+                    MouseArea {
+                        id: loginMouse
+                        anchors.fill: parent
+                        onClicked: root.attemptLogin()
                     }
                 }
 

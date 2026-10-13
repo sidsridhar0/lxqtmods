@@ -225,23 +225,27 @@ class Dashboard(Gtk.ApplicationWindow):
         self.set_skip_taskbar_hint(True)
         self.set_skip_pager_hint(True)
 
-        if GtkLayerShell is not None and GtkLayerShell.is_supported():
-            GtkLayerShell.init_for_window(self)
-            GtkLayerShell.set_namespace(self, "lxqtmods-desktop-widgets")
-            GtkLayerShell.set_layer(self, GtkLayerShell.Layer.TOP)
-            GtkLayerShell.set_anchor(self, GtkLayerShell.Edge.TOP, True)
-            GtkLayerShell.set_anchor(self, GtkLayerShell.Edge.LEFT, True)
-            GtkLayerShell.set_margin(self, GtkLayerShell.Edge.TOP, 16)
-            GtkLayerShell.set_margin(self, GtkLayerShell.Edge.LEFT, 64)
-            GtkLayerShell.set_keyboard_mode(self, GtkLayerShell.KeyboardMode.ON_DEMAND)
-            display = self.get_display()
-            primary_monitor = display.get_primary_monitor()
-            monitor = primary_monitor
-            if monitor is None and display.get_n_monitors() > 0:
-                monitor = display.get_monitor(0)
-            if monitor is not None:
-                GtkLayerShell.set_monitor(self, monitor)
-            return
+        try:
+            if GtkLayerShell is not None and GtkLayerShell.is_supported():
+                GtkLayerShell.init_for_window(self)
+                GtkLayerShell.set_namespace(self, "lxqtmods-desktop-widgets")
+                GtkLayerShell.set_layer(self, GtkLayerShell.Layer.TOP)
+                GtkLayerShell.set_anchor(self, GtkLayerShell.Edge.TOP, True)
+                GtkLayerShell.set_anchor(self, GtkLayerShell.Edge.LEFT, True)
+                GtkLayerShell.set_margin(self, GtkLayerShell.Edge.TOP, 16)
+                GtkLayerShell.set_margin(self, GtkLayerShell.Edge.LEFT, 64)
+                keyboard_mode = getattr(GtkLayerShell, "KeyboardMode", None)
+                if keyboard_mode is not None:
+                    GtkLayerShell.set_keyboard_mode(self, keyboard_mode.ON_DEMAND)
+                display = self.get_display()
+                monitor = display.get_primary_monitor()
+                if monitor is None and display.get_n_monitors() > 0:
+                    monitor = display.get_monitor(0)
+                if monitor is not None:
+                    GtkLayerShell.set_monitor(self, monitor)
+                return
+        except (GLib.Error, AttributeError, RuntimeError) as error:
+            print(f"GTK layer-shell setup failed: {error}", file=sys.stderr)
 
         self.set_keep_above(True)
         self.set_type_hint(Gdk.WindowTypeHint.UTILITY)
@@ -544,12 +548,35 @@ class DashboardApplication(Gtk.Application):
         )
         self.desktop_mode = desktop_mode
         self.window = None
+        self._held_for_desktop = False
 
     def do_activate(self):
-        if self.window is None:
-            self.window = Dashboard(self, self.desktop_mode)
-            self.window.connect("destroy", self._window_closed)
-        self.window.present()
+        if self.window is not None:
+            self.window.present()
+            return
+        if self.desktop_mode:
+            if not self._held_for_desktop:
+                self.hold()
+                self._held_for_desktop = True
+            GLib.timeout_add(750, self._open_window)
+            return
+        self._open_window()
+
+    def _open_window(self):
+        try:
+            if self.window is None:
+                self.window = Dashboard(self, self.desktop_mode)
+                self.window.connect("destroy", self._window_closed)
+            self.window.present()
+        except (OSError, ValueError, RuntimeError, GLib.Error, AttributeError, TypeError) as error:
+            print(f"Desktop widgets failed to start: {error}", file=sys.stderr)
+            if not self.desktop_mode:
+                self.quit()
+        finally:
+            if self._held_for_desktop:
+                self._held_for_desktop = False
+                self.release()
+        return GLib.SOURCE_REMOVE
 
     def _window_closed(self, *_args):
         self.window = None

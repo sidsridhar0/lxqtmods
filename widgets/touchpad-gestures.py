@@ -9,7 +9,7 @@ import time
 logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 SWIPE_BEGIN = re.compile(r"GESTURE_SWIPE_BEGIN\b.*?\s(\d+)\s*$")
 SWIPE_UPDATE = re.compile(
-    r"GESTURE_SWIPE_UPDATE\b.*?\s(\d+)\s+(-?\d+(?:\.\d+)?)/(-?\d+(?:\.\d+)?)\s*$"
+    r"GESTURE_SWIPE_UPDATE\b.*?\s(\d+)\s+(-?\d+(?:\.\d+)?)/(-?\d+(?:\.\d+)?)(?:\s|$)"
 )
 SWIPE_END = re.compile(r"GESTURE_SWIPE_END\b.*?\s(\d+)(?:\s+\S+)?\s*$")
 UP_THRESHOLD = -35.0

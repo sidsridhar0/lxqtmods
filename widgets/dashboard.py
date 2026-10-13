@@ -228,11 +228,14 @@ class Dashboard(Gtk.ApplicationWindow):
             GtkLayerShell.set_anchor(self, GtkLayerShell.Edge.LEFT, True)
             GtkLayerShell.set_margin(self, GtkLayerShell.Edge.TOP, 16)
             GtkLayerShell.set_margin(self, GtkLayerShell.Edge.LEFT, 64)
-            GtkLayerShell.set_keyboard_mode(self, GtkLayerShell.KeyboardMode.NONE)
+            GtkLayerShell.set_keyboard_mode(self, GtkLayerShell.KeyboardMode.ON_DEMAND)
             display = self.get_display()
             primary_monitor = display.get_primary_monitor()
-            if primary_monitor is not None:
-                GtkLayerShell.set_monitor(self, primary_monitor)
+            monitor = primary_monitor
+            if monitor is None and display.get_n_monitors() > 0:
+                monitor = display.get_monitor(0)
+            if monitor is not None:
+                GtkLayerShell.set_monitor(self, monitor)
             return
 
         self.set_keep_above(True)

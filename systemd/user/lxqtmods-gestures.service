@@ -1,0 +1,11 @@
+[Unit]
+Description=LXQt Mods touchpad gestures
+After=graphical-session.target
+
+[Service]
+ExecStart=%h/.local/bin/lxqtmods-touchpad-gestures
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=default.target

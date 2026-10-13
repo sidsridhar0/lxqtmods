@@ -19,7 +19,8 @@ cd lxqtmods
 The script installs Spotify from Flathub and downloads the current stable
 x86_64 Helium AppImage from Helium's official release metadata. User settings
 are installed in your home directory. Run it from a terminal with sudo access
-to install the Power Profiles service and the custom SDDM login theme as well.
+to install GTK layer-shell, wtype, Power Profiles, and the custom SDDM login
+theme, and to enable touchpad gesture input.
 
 Press **F7** to cycle from extended screens to laptop-only, external-only,
 duplicated, then extended screens again. Miriway applies each mode live and
@@ -38,12 +39,27 @@ The theme adapts the reference dotfiles' rounded panels, bold outlines, mint
 accents, and monospaced typography to a dark graphite palette. Main settings
 live in `config/`; the custom Qt/GTK styles and wallpaper are under `assets/`.
 
-Select **Desktop widgets** on the left panel to open the system dashboard. It
+The dashboard is pinned to the top-left desktop and starts with Miriway. It
 shows live CPU and memory usage, an equalizer-style master-volume meter with a
 draggable volume slider, battery charge and status, and a persistent checklist.
 The battery action switches between Balanced and Power Saver profiles; the
 deployment script installs and enables `power-profiles-daemon` for this feature.
-Todo items are saved under `~/.local/state/lxqtmods/todos.json`.
+Todo items are saved under `~/.local/state/lxqtmods/todos.json`. **Desktop
+widgets** on the left panel reopens the dashboard if it is closed.
+
+The left panel groups open windows by application instead of showing a
+separate task button for every window. Hover over a group to choose one of its
+open windows. Miriway also provides the built-in <kbd>Alt</kbd>+<kbd>Tab</kbd>
+application switcher and <kbd>Alt</kbd>+<kbd>Grave</kbd> window switcher.
+
+The deploy script configures a three-finger swipe up to open Miriway's window
+switcher. This needs `wtype`, a libinput gesture monitor, and access to input
+devices by adding the account to the `input` group. That permission covers all
+input devices, not only the touchpad. Log out and back in after deployment for
+the group membership to take effect.
+
+Mouse and touchpad scrolling are configured as reversed (natural) scrolling in
+both axes.
 
 The optional SDDM theme uses a dark graphite surface and mint accents. It is
 installed under `/usr/share/sddm/themes/Modern-Minimal` and selected by

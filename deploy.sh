@@ -84,7 +84,7 @@ Version=1.0
 Type=Application
 Name=Desktop widgets
 Comment=System meters, volume, battery profile, and todo list
-Exec=python3 "$DATA_DIR/lxqtmods/dashboard.py"
+Exec=python3 "$DATA_DIR/lxqtmods/dashboard.py" --desktop
 Icon=utilities-system-monitor
 Terminal=false
 Categories=System;
@@ -118,6 +118,14 @@ except FileNotFoundError:
 
 lines = [line for line in lines if not line.startswith("command_shell_plain=F7:")]
 lines.append(f"command_shell_plain=F7:{shlex.quote(script)}")
+for key in (
+    "pointer_vertical_scroll_speed",
+    "pointer_horizontal_scroll_speed",
+    "touchpad_vertical_scroll_speed",
+    "touchpad_horizontal_scroll_speed",
+):
+    lines = [line for line in lines if not line.lstrip("#").startswith(f"{key}=")]
+    lines.append(f"{key}=-1")
 
 fd, temporary_file = tempfile.mkstemp(dir=os.path.dirname(settings_file))
 try:
@@ -128,6 +136,49 @@ except BaseException:
     os.unlink(temporary_file)
     raise
 PY
+
+miriway_config="$CONFIG_DIR/lxqt/miriway-shell.config"
+backup_once "$miriway_config"
+python3 - "$miriway_config" "$DATA_DIR/lxqtmods/dashboard.py" <<'PY'
+import os
+import shlex
+import sys
+import tempfile
+
+config_file, dashboard = sys.argv[1:]
+os.makedirs(os.path.dirname(config_file), exist_ok=True)
+try:
+    with open(config_file, encoding="utf-8") as stream:
+        lines = stream.read().splitlines()
+except FileNotFoundError:
+    lines = []
+
+lines = [
+    line for line in lines
+    if not (
+        line.startswith("shell-component=")
+        and "lxqtmods/dashboard.py" in line
+    )
+]
+lines.append(
+    "shell-component="
+    + shlex.join(["python3", dashboard, "--desktop"])
+)
+
+fd, temporary_file = tempfile.mkstemp(dir=os.path.dirname(config_file))
+try:
+    with os.fdopen(fd, "w", encoding="utf-8") as stream:
+        stream.write("\n".join(lines) + "\n")
+    os.replace(temporary_file, config_file)
+except BaseException:
+    os.unlink(temporary_file)
+    raise
+PY
+
+install -D -m 755 "$ROOT/widgets/touchpad-gestures.py" \
+    "$HOME/.local/bin/lxqtmods-touchpad-gestures"
+install -D -m 644 "$ROOT/systemd/user/lxqtmods-gestures.service" \
+    "$CONFIG_DIR/systemd/user/lxqtmods-gestures.service"
 
 mkdir -p "$APP_DIR"
 release_url="$(
@@ -176,8 +227,13 @@ flatpak remote-add --user --if-not-exists flathub \
 flatpak install --user --noninteractive --assumeyes flathub com.spotify.Client
 
 if command -v sudo >/dev/null 2>&1 && [[ -t 0 ]]; then
-    sudo dnf install -y power-profiles-daemon
+    sudo dnf install -y gtk-layer-shell power-profiles-daemon wtype
     sudo systemctl enable --now power-profiles-daemon.service
+    if ! id -nG "$USER" | tr ' ' '\n' | grep -Fxq input; then
+        sudo usermod --append --groups input "$USER"
+    fi
+    systemctl --user daemon-reload
+    systemctl --user enable lxqtmods-gestures.service
     sddm_theme_dir=/usr/share/sddm/themes/Modern-Minimal
     sddm_dropin=/etc/sddm.conf.d/90-lxqtmods.conf
     if sudo test -d "$sddm_theme_dir" && ! sudo test -e "$sddm_theme_dir.lxqtmods.bak"; then
@@ -195,9 +251,12 @@ if command -v sudo >/dev/null 2>&1 && [[ -t 0 ]]; then
         "$sddm_dropin"
 else
     printf '\nSystem setup was skipped: run deploy.sh from a terminal with sudo access to install\n' >&2
-    printf 'the Power Saver profile service and apply the custom SDDM login theme.\n' >&2
+    printf 'the Power Profiles and layer-shell packages, enable touchpad gestures, and apply\n' >&2
+    printf 'the custom SDDM login theme.\n' >&2
 fi
 
-printf '\nSetup installed. Log out and back in to apply the theme and panel changes.\n'
+printf '\nSetup installed. Log out and back in to show the desktop widget, apply panel settings,\n'
+printf 'and activate three-finger gestures. Gesture support reads input events from all devices;\n'
+printf 'the account must be in the input group, and that access takes effect after logging back in.\n'
 printf 'Press F7 to cycle display modes; the extended layout is active by default.\n'
 printf 'Open Desktop widgets from the left sidebar for CPU/RAM, volume, battery, and todos.\n'

@@ -4,13 +4,21 @@ import json
 import os
 import re
 import subprocess
+import sys
 import tempfile
 from pathlib import Path
 
 import gi
 
+gi.require_version("Gdk", "3.0")
 gi.require_version("Gtk", "3.0")
-from gi.repository import Gio, GLib, Gtk
+from gi.repository import Gdk, Gio, GLib, Gtk
+
+try:
+    gi.require_version("GtkLayerShell", "0.1")
+    from gi.repository import GtkLayerShell
+except (ImportError, ValueError):
+    GtkLayerShell = None
 
 
 ACCENT = (0.57, 0.84, 0.80)
@@ -97,13 +105,14 @@ def save_todos(items):
 
 
 class Dashboard(Gtk.ApplicationWindow):
-    def __init__(self, application):
+    def __init__(self, application, desktop_mode):
         super().__init__(application=application, title="Desktop widgets")
         self.set_name("lxqtmods-dashboard")
         self.set_default_size(380, 740)
         self.set_resizable(False)
-        self.set_position(Gtk.WindowPosition.CENTER)
         self.set_icon_name("utilities-system-monitor")
+        self.desktop_mode = desktop_mode
+        self._configure_window()
         self._cpu_previous = read_cpu_times()
         self._volume_write_timeout = 0
         self._volume_is_dragging = False
@@ -133,9 +142,10 @@ class Dashboard(Gtk.ApplicationWindow):
         subtitle.set_xalign(0)
         subtitle.get_style_context().add_class("heading")
         titles.pack_start(subtitle, False, False, 0)
-        close_button = Gtk.Button.new_from_icon_name("window-close-symbolic", Gtk.IconSize.BUTTON)
-        close_button.connect("clicked", lambda *_: self.close())
-        heading.pack_end(close_button, False, False, 0)
+        if not self.desktop_mode:
+            close_button = Gtk.Button.new_from_icon_name("window-close-symbolic", Gtk.IconSize.BUTTON)
+            close_button.connect("clicked", lambda *_: self.close())
+            heading.pack_end(close_button, False, False, 0)
 
         self.message = Gtk.Label()
         self.message.set_xalign(0)
@@ -200,6 +210,40 @@ class Dashboard(Gtk.ApplicationWindow):
         self._refresh()
         self._refresh_source = GLib.timeout_add_seconds(2, self._refresh)
         self.connect("destroy", self._on_destroy)
+
+    def _configure_window(self):
+        if not self.desktop_mode:
+            self.set_position(Gtk.WindowPosition.CENTER)
+            return
+
+        self.set_decorated(False)
+        self.set_skip_taskbar_hint(True)
+        self.set_skip_pager_hint(True)
+
+        if GtkLayerShell is not None and GtkLayerShell.is_supported():
+            GtkLayerShell.init_for_window(self)
+            GtkLayerShell.set_namespace(self, "lxqtmods-desktop-widgets")
+            GtkLayerShell.set_layer(self, GtkLayerShell.Layer.BOTTOM)
+            GtkLayerShell.set_anchor(self, GtkLayerShell.Edge.TOP, True)
+            GtkLayerShell.set_anchor(self, GtkLayerShell.Edge.LEFT, True)
+            GtkLayerShell.set_margin(self, GtkLayerShell.Edge.TOP, 16)
+            GtkLayerShell.set_margin(self, GtkLayerShell.Edge.LEFT, 64)
+            GtkLayerShell.set_keyboard_mode(self, GtkLayerShell.KeyboardMode.NONE)
+            display = self.get_display()
+            primary_monitor = display.get_primary_monitor()
+            if primary_monitor is not None:
+                GtkLayerShell.set_monitor(self, primary_monitor)
+            return
+
+        self.set_keep_above(True)
+        self.set_type_hint(Gdk.WindowTypeHint.UTILITY)
+        self.set_position(Gtk.WindowPosition.NONE)
+        self.move(64, 16)
+        print(
+            "GTK layer-shell is unavailable; the dashboard will use a regular "
+            "desktop window until gtk-layer-shell is installed.",
+            file=sys.stderr,
+        )
 
     def _install_css(self):
         css = b"""
@@ -480,16 +524,17 @@ class Dashboard(Gtk.ApplicationWindow):
 
 
 class DashboardApplication(Gtk.Application):
-    def __init__(self):
+    def __init__(self, desktop_mode):
         super().__init__(
             application_id="io.github.sidsridhar0.lxqtmods.dashboard",
             flags=Gio.ApplicationFlags(0),
         )
+        self.desktop_mode = desktop_mode
         self.window = None
 
     def do_activate(self):
         if self.window is None:
-            self.window = Dashboard(self)
+            self.window = Dashboard(self, self.desktop_mode)
             self.window.connect("destroy", self._window_closed)
         self.window.present()
 
@@ -498,4 +543,5 @@ class DashboardApplication(Gtk.Application):
 
 
 if __name__ == "__main__":
-    raise SystemExit(DashboardApplication().run(None))
+    desktop_mode = "--desktop" in sys.argv[1:]
+    raise SystemExit(DashboardApplication(desktop_mode).run([]))

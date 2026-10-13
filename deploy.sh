@@ -4,8 +4,19 @@ set -euo pipefail
 ROOT="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 if [[ "$EUID" -eq 0 ]]; then
     if [[ -n "${SUDO_USER:-}" && "$SUDO_USER" != root ]]; then
-        deploy_home="$(getent passwd "$SUDO_USER" | cut -d: -f6)"
-        exec sudo -u "$SUDO_USER" -- env -u SUDO_USER HOME="$deploy_home" \
+        user_record="$(getent passwd "$SUDO_USER")"
+        deploy_uid="$(cut -d: -f3 <<<"$user_record")"
+        deploy_home="$(cut -d: -f6 <<<"$user_record")"
+        runtime_dir="/run/user/$deploy_uid"
+        if [[ ! -S "$runtime_dir/bus" ]]; then
+            printf 'No user-session bus found at %s/bus. Log in as %s and retry.\n' \
+                "$runtime_dir" "$SUDO_USER" >&2
+            exit 1
+        fi
+        exec sudo -u "$SUDO_USER" -- env -u SUDO_USER \
+            HOME="$deploy_home" \
+            XDG_RUNTIME_DIR="$runtime_dir" \
+            DBUS_SESSION_BUS_ADDRESS="unix:path=$runtime_dir/bus" \
             "$ROOT/deploy.sh" "$@"
     fi
     printf 'Do not run deploy.sh as root; run ./deploy.sh from your user account.\n' >&2

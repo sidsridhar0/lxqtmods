@@ -1,14 +1,14 @@
 QWidget {
-    color: #eee9dc;
-    background-color: #191b1c;
-    selection-color: #101313;
-    selection-background-color: #91d7cc;
+    color: #f4eefc;
+    background-color: #16122a;
+    selection-color: #120e22;
+    selection-background-color: #8ad4ea;
 }
 
 QToolTip {
-    color: #eee9dc;
-    background-color: #292c2d;
-    border: 2px solid #090a0a;
+    color: #f4eefc;
+    background-color: #2c2458;
+    border: 2px solid #090814;
     border-radius: 8px;
     padding: 6px 9px;
 }
@@ -18,27 +18,27 @@ QComboBox,
 QLineEdit,
 QSpinBox,
 QDoubleSpinBox {
-    color: #eee9dc;
-    background-color: #292c2d;
-    border: 2px solid #090a0a;
+    color: #f4eefc;
+    background-color: #2c2458;
+    border: 2px solid #090814;
     border-radius: 8px;
     padding: 6px 9px;
 }
 
 QPushButton:hover,
 QComboBox:hover {
-    color: #101313;
-    background-color: #91d7cc;
+    color: #120e22;
+    background-color: #8ad4ea;
 }
 
 QPushButton:pressed {
-    background-color: #79bdb3;
+    background-color: #6bb8d4;
 }
 
 QTabBar::tab {
-    color: #eee9dc;
-    background-color: #242728;
-    border: 2px solid #090a0a;
+    color: #f4eefc;
+    background-color: #2a2150;
+    border: 2px solid #090814;
     border-bottom: none;
     border-top-left-radius: 8px;
     border-top-right-radius: 8px;
@@ -46,13 +46,13 @@ QTabBar::tab {
 }
 
 QTabBar::tab:selected {
-    color: #101313;
-    background-color: #91d7cc;
+    color: #120e22;
+    background-color: #8ad4ea;
 }
 
 QHeaderView::section {
-    color: #eee9dc;
-    background-color: #292c2d;
-    border: 2px solid #090a0a;
+    color: #f4eefc;
+    background-color: #2c2458;
+    border: 2px solid #090814;
     padding: 6px;
 }

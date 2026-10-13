@@ -1,14 +1,14 @@
 QToolTip {
-    color: #eee9dc;
-    background: #292c2d;
-    border: 2px solid #090a0a;
+    color: #f4eefc;
+    background: #2c2458;
+    border: 2px solid #090814;
     border-radius: 8px;
     padding: 6px 9px;
 }
 
 QFrame {
-    color: #eee9dc;
-    background: #202324;
-    border: 2px solid #090a0a;
+    color: #f4eefc;
+    background: #1e1840;
+    border: 2px solid #090814;
     border-radius: 10px;
 }

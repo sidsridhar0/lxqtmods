@@ -108,7 +108,7 @@ cat > "$dashboard_desktop" <<EOF
 Version=1.0
 Type=Application
 Name=Desktop widgets
-Comment=System meters, volume, battery profile, and todo list
+Comment=Desktop stats overlay, volume, battery profile, and todo list
 Exec=python3 "$DATA_DIR/lxqtmods/dashboard.py" --desktop
 Icon=utilities-system-monitor
 Terminal=false
@@ -321,4 +321,4 @@ printf 'The Fedora SDDM greeter is left in place so a custom login theme cannot 
 printf 'Displays default to the laptop screen; press F7 after login to add a detected external monitor.\n'
 printf 'Three-finger swipe up opens the window switcher. That service only watches touchpad devices\n'
 printf 'and starts with the graphical session. Input-group membership takes effect after logging back in.\n'
-printf 'The left-sidebar Desktop widgets shortcut can show the dashboard again if it is closed.\n'
+printf 'The panel Desktop widgets shortcut opens volume, power, and todos; the wallpaper overlay stays on the desktop.\n'

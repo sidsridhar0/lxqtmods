@@ -1,14 +1,14 @@
-@define-color theme_bg_color #191b1c;
-@define-color theme_fg_color #eee9dc;
-@define-color theme_base_color #202324;
-@define-color theme_text_color #eee9dc;
-@define-color theme_selected_bg_color #91d7cc;
-@define-color theme_selected_fg_color #101313;
+@define-color theme_bg_color #16122a;
+@define-color theme_fg_color #f4eefc;
+@define-color theme_base_color #1e1840;
+@define-color theme_text_color #f4eefc;
+@define-color theme_selected_bg_color #8ad4ea;
+@define-color theme_selected_fg_color #120e22;
 
 * {
-    font-family: "Noto Sans Mono";
+    font-family: "Noto Sans";
     font-size: 10pt;
-    outline-color: #91d7cc;
+    outline-color: #8ad4ea;
     -GtkWidget-focus-line-width: 2;
 }
 
@@ -17,15 +17,15 @@ dialog,
 popover,
 menu,
 menuitem {
-    color: #eee9dc;
-    background-color: #191b1c;
+    color: #f4eefc;
+    background-color: #16122a;
 }
 
 headerbar,
 toolbar {
-    color: #eee9dc;
-    background-color: #202324;
-    border-bottom: 3px solid #090a0a;
+    color: #f4eefc;
+    background-color: #1e1840;
+    border-bottom: 3px solid #090814;
     box-shadow: none;
 }
 
@@ -34,63 +34,63 @@ entry,
 spinbutton,
 combobox > box,
 notebook > header > tabs > tab {
-    color: #eee9dc;
-    background-color: #292c2d;
-    border: 2px solid #090a0a;
-    border-radius: 8px;
+    color: #f4eefc;
+    background-color: #2c2458;
+    border: 2px solid #090814;
+    border-radius: 12px;
     box-shadow: none;
     padding: 6px 9px;
 }
 
 button:hover,
 menuitem:hover {
-    color: #101313;
-    background-color: #91d7cc;
+    color: #120e22;
+    background-color: #8ad4ea;
 }
 
 button:active,
 button:checked,
 notebook > header > tabs > tab:checked {
-    color: #101313;
-    background-color: #91d7cc;
-    border-color: #090a0a;
+    color: #120e22;
+    background-color: #8ad4ea;
+    border-color: #090814;
 }
 
 entry:focus,
 spinbutton:focus,
 combobox:focus {
-    border-color: #91d7cc;
+    border-color: #8ad4ea;
 }
 
 list,
 treeview,
 textview,
 viewport {
-    color: #eee9dc;
-    background-color: #202324;
+    color: #f4eefc;
+    background-color: #1e1840;
 }
 
 selection,
 *:selected {
-    color: #101313;
-    background-color: #91d7cc;
+    color: #120e22;
+    background-color: #8ad4ea;
 }
 
 scale trough,
 progressbar trough {
-    background-color: #101212;
-    border: 2px solid #090a0a;
+    background-color: #120e22;
+    border: 2px solid #090814;
     border-radius: 7px;
 }
 
 scale highlight,
 progressbar progress {
-    background-color: #91d7cc;
+    background-color: #8ad4ea;
     border-radius: 5px;
 }
 
 scrollbar slider {
-    background-color: #59605e;
-    border: 2px solid #090a0a;
+    background-color: #5a4d88;
+    border: 2px solid #090814;
     border-radius: 7px;
 }

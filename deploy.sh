@@ -28,12 +28,14 @@ APP_DIR="$HOME/Applications"
 DATA_DIR="$HOME/.local/share"
 CONFIG_DIR="$HOME/.config"
 
-for command in curl flatpak gio python3; do
-    if ! command -v "$command" >/dev/null 2>&1; then
-        printf 'Required command not found: %s\n' "$command" >&2
-        exit 1
-    fi
-done
+if ! command -v python3 >/dev/null 2>&1; then
+    printf 'Required command not found: python3\n' >&2
+    exit 1
+fi
+
+warn() {
+    printf '%s\n' "$*" >&2
+}
 
 python3 -c 'import gi; gi.require_version("Gtk", "3.0"); from gi.repository import Gtk' || {
     printf 'GTK 3 Python bindings are required (python3-gobject).\n' >&2
@@ -118,11 +120,16 @@ install -m 644 "$dashboard_desktop" "$CONFIG_DIR/autostart/lxqtmods-dashboard.de
 
 display_config="$CONFIG_DIR/miriway-shell.display-config"
 backup_once "$display_config"
-install -D -m 644 "$ROOT/config/miriway-shell.display-config" "$display_config"
+python3 "$ROOT/generate-display-config.py" "$display_config" \
+    --fallback "$ROOT/config/miriway-shell.display-config" \
+    || install -D -m 644 "$ROOT/config/miriway-shell.display-config" "$display_config"
 
 display_layout="$display_config-layout"
 backup_once "$display_layout"
-printf 'extended\n' > "$display_layout"
+if [[ ! -f "$display_layout" ]] \
+        || grep -qxE 'extended|side_by_side|default' "$display_layout"; then
+    printf 'first-screen\n' > "$display_layout"
+fi
 
 display_mode_script="$HOME/.local/bin/lxqtmods-display-mode"
 settings_file="$CONFIG_DIR/lxqt/miriway-shell.settings"
@@ -201,23 +208,34 @@ install -D -m 755 "$ROOT/widgets/touchpad-gestures.py" \
 install -D -m 644 "$ROOT/systemd/user/lxqtmods-gestures.service" \
     "$CONFIG_DIR/systemd/user/lxqtmods-gestures.service"
 
-mkdir -p "$APP_DIR"
-release_url="$(
-    curl -fsSL https://files.helium.computer/releases.json |
-        python3 -c 'import json,sys; print(json.load(sys.stdin)["linux"]["stable"]["x86_64"])'
-)"
-temporary_app="$(mktemp "$APP_DIR/helium.AppImage.XXXXXX")"
-trap 'rm -f -- "$temporary_app"' EXIT
-curl -fL --retry 2 "$release_url" -o "$temporary_app"
-chmod 755 "$temporary_app"
-mv -f -- "$temporary_app" "$APP_DIR/helium.AppImage"
-trap - EXIT
-
-python3 - "$HOME" "$DATA_DIR" <<'PY'
+install_helium() {
+    command -v curl >/dev/null 2>&1 || {
+        warn "curl is not installed; skipping Helium."
+        return 1
+    }
+    mkdir -p "$APP_DIR" || return 1
+    local release_url temporary_app
+    if ! release_url="$(
+        curl -fsSL https://files.helium.computer/releases.json |
+            python3 -c 'import json,sys; print(json.load(sys.stdin)["linux"]["stable"]["x86_64"])'
+    )"; then
+        return 1
+    fi
+    temporary_app="$(mktemp "$APP_DIR/helium.AppImage.XXXXXX")" || return 1
+    if ! curl -fL --retry 2 "$release_url" -o "$temporary_app"; then
+        rm -f -- "$temporary_app"
+        return 1
+    fi
+    chmod 755 "$temporary_app" || { rm -f -- "$temporary_app"; return 1; }
+    mv -f -- "$temporary_app" "$APP_DIR/helium.AppImage" || {
+        rm -f -- "$temporary_app"
+        return 1
+    }
+    python3 - "$HOME" <<'PY' || return 1
 import os
 import sys
 
-home, data_dir = sys.argv[1:]
+home = sys.argv[1]
 applications = os.path.join(home, ".local", "share", "applications")
 os.makedirs(applications, exist_ok=True)
 app = os.path.join(home, "Applications", "helium.AppImage")
@@ -237,56 +255,70 @@ StartupWMClass=helium
 with open(os.path.join(applications, "helium.desktop"), "w", encoding="utf-8") as stream:
     stream.write(entry)
 PY
+    if command -v gio >/dev/null 2>&1; then
+        gio mime text/html helium.desktop
+        gio mime application/xhtml+xml helium.desktop
+        gio mime x-scheme-handler/http helium.desktop
+        gio mime x-scheme-handler/https helium.desktop
+    fi
+}
 
-gio mime text/html helium.desktop
-gio mime application/xhtml+xml helium.desktop
-gio mime x-scheme-handler/http helium.desktop
-gio mime x-scheme-handler/https helium.desktop
+install_helium || warn "Helium install skipped; desktop session settings were still applied."
 
-flatpak remote-add --user --if-not-exists flathub \
-    https://dl.flathub.org/repo/flathub.flatpakrepo
-flatpak install --user --noninteractive --assumeyes flathub com.spotify.Client
-
-if command -v sudo >/dev/null 2>&1 && [[ -t 0 ]]; then
-    sudo dnf install -y gtk-layer-shell power-profiles-daemon wtype
-    sudo systemctl enable --now power-profiles-daemon.service
-    if ! getent group input | cut -d: -f4 | tr ',' '\n' | grep -Fxq "$DEPLOY_USER"; then
-        sudo usermod --append --groups input "$DEPLOY_USER"
-    fi
-    sddm_theme_dir=/usr/share/sddm/themes/Modern-Minimal
-    sddm_dropin=/etc/sddm.conf.d/90-lxqtmods.conf
-    if sudo test -d "$sddm_theme_dir" && ! sudo test -e "$sddm_theme_dir.lxqtmods.bak"; then
-        sudo cp -a -- "$sddm_theme_dir" "$sddm_theme_dir.lxqtmods.bak"
-    fi
-    if sudo test -f "$sddm_dropin" && ! sudo test -e "$sddm_dropin.lxqtmods.bak"; then
-        sudo cp -a -- "$sddm_dropin" "$sddm_dropin.lxqtmods.bak"
-    fi
-    sudo install -d "$sddm_theme_dir"
-    sudo install -m 644 "$ROOT/assets/sddm/Modern-Minimal/Main.qml" \
-        "$sddm_theme_dir/Main.qml"
-    sudo install -m 644 "$ROOT/assets/sddm/Modern-Minimal/theme.conf" \
-        "$sddm_theme_dir/theme.conf"
-    sudo install -m 644 "$ROOT/assets/sddm/Modern-Minimal/metadata.desktop" \
-        "$sddm_theme_dir/metadata.desktop"
-    if ! command -v sddm-greeter-qt6 >/dev/null 2>&1 \
-            && command -v sddm-greeter >/dev/null 2>&1; then
-        sudo sed -i 's/^QtVersion=6$/QtVersion=5/' \
-            "$sddm_theme_dir/metadata.desktop"
-    fi
-    sudo install -D -m 644 "$ROOT/config/sddm.conf" \
-        "$sddm_dropin"
+if command -v flatpak >/dev/null 2>&1; then
+    flatpak remote-add --user --if-not-exists flathub \
+        https://dl.flathub.org/repo/flathub.flatpakrepo \
+        || warn "Could not add the Flathub remote."
+    flatpak install --user --noninteractive --assumeyes flathub com.spotify.Client \
+        || warn "Spotify install skipped."
 else
-    printf '\nSystem setup was skipped: run deploy.sh from a terminal with sudo access to install\n' >&2
-    printf 'the Power Profiles and layer-shell packages, enable touchpad gestures, and apply\n' >&2
-    printf 'the custom SDDM login theme.\n' >&2
+    warn "flatpak is not installed; skipping Spotify."
 fi
 
-systemctl --user daemon-reload
-systemctl --user enable lxqtmods-gestures.service
+restore_sddm_default() {
+    local sddm_theme_dir=/usr/share/sddm/themes/Modern-Minimal
+    local sddm_dropin=/etc/sddm.conf.d/90-lxqtmods.conf
+    if sudo test -e "$sddm_dropin.lxqtmods.bak"; then
+        sudo mv -- "$sddm_dropin.lxqtmods.bak" "$sddm_dropin"
+    elif sudo test -f "$sddm_dropin"; then
+        sudo rm -f -- "$sddm_dropin"
+    fi
+    if sudo test -e "$sddm_theme_dir.lxqtmods.bak"; then
+        sudo rm -rf -- "$sddm_theme_dir"
+        sudo mv -- "$sddm_theme_dir.lxqtmods.bak" "$sddm_theme_dir"
+    elif sudo test -f "$sddm_theme_dir/metadata.desktop" \
+            && sudo grep -q '^Theme-Id=Modern-Minimal$' "$sddm_theme_dir/metadata.desktop"; then
+        sudo rm -rf -- "$sddm_theme_dir"
+    fi
+}
 
-printf '\nSetup installed. Log out and back in to show the desktop widget, apply panel settings,\n'
-printf 'and activate three-finger gestures. Gesture support reads input events from all devices;\n'
-printf 'the account must be in the input group, and that access takes effect after logging back in.\n'
-printf 'Press F7 to cycle display modes; the extended layout is active by default.\n'
-printf 'The interactive CPU/RAM, volume, battery, and todo dashboard runs on the desktop.\n'
-printf 'The left-sidebar Desktop widgets shortcut can show it again if it is closed.\n'
+if command -v sudo >/dev/null 2>&1 && [[ -t 0 ]]; then
+    sudo dnf install -y gtk-layer-shell power-profiles-daemon wtype \
+        || warn "Optional package install failed; continuing with session settings."
+    sudo systemctl enable --now power-profiles-daemon.service \
+        || warn "Could not enable power-profiles-daemon."
+    if ! getent group input | cut -d: -f4 | tr ',' '\n' | grep -Fxq "$DEPLOY_USER"; then
+        sudo usermod --append --groups input "$DEPLOY_USER" \
+            || warn "Could not add $DEPLOY_USER to the input group."
+    fi
+    restore_sddm_default || warn "Could not restore the distro SDDM greeter."
+else
+    warn "System setup was skipped: run deploy.sh from a terminal with sudo access to install"
+    warn "Power Profiles, layer-shell, and touchpad gesture packages."
+    warn "If graphical login is broken, remove /etc/sddm.conf.d/90-lxqtmods.conf from a TTY."
+fi
+
+systemctl --user disable --now lxqtmods-gestures.service >/dev/null 2>&1 || true
+systemctl --user daemon-reload || warn "Could not reload user systemd units."
+systemctl --user enable lxqtmods-gestures.service \
+    || warn "Could not enable the gesture service."
+if systemctl --user is-active --quiet graphical-session.target; then
+    systemctl --user start lxqtmods-gestures.service || warn "Gesture service will start at the next login."
+fi
+
+printf '\nSetup installed. Log out and back in to apply panel settings and start the desktop widget.\n'
+printf 'The Fedora SDDM greeter is left in place so a custom login theme cannot lock you out.\n'
+printf 'Displays default to the laptop screen; press F7 after login to add a detected external monitor.\n'
+printf 'Three-finger swipe up opens the window switcher. That service only watches touchpad devices\n'
+printf 'and starts with the graphical session. Input-group membership takes effect after logging back in.\n'
+printf 'The left-sidebar Desktop widgets shortcut can show the dashboard again if it is closed.\n'

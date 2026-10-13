@@ -24,6 +24,8 @@ except (ImportError, ValueError):
 ACCENT = (0.57, 0.84, 0.80)
 STATE_DIR = Path(os.environ.get("XDG_STATE_HOME", Path.home() / ".local/state")) / "lxqtmods"
 TODO_FILE = STATE_DIR / "todos.json"
+DESKTOP_START_DELAY_MS = 1000
+DESKTOP_START_ATTEMPTS = 8
 
 
 def run_checked(arguments):
@@ -113,10 +115,16 @@ class Dashboard(Gtk.ApplicationWindow):
         self.set_icon_name("utilities-system-monitor")
         self.desktop_mode = desktop_mode
         self._configure_window()
-        self._cpu_previous = read_cpu_times()
+        try:
+            self._cpu_previous = read_cpu_times()
+        except (OSError, RuntimeError, ValueError):
+            self._cpu_previous = (0, 0)
         self._volume_write_timeout = 0
         self._volume_is_dragging = False
-        self._todos = load_todos()
+        try:
+            self._todos = load_todos()
+        except (OSError, ValueError):
+            self._todos = []
 
         self._install_css()
         scroll = Gtk.ScrolledWindow()
@@ -237,12 +245,6 @@ class Dashboard(Gtk.ApplicationWindow):
                 keyboard_mode = getattr(GtkLayerShell, "KeyboardMode", None)
                 if keyboard_mode is not None:
                     GtkLayerShell.set_keyboard_mode(self, keyboard_mode.ON_DEMAND)
-                display = self.get_display()
-                monitor = display.get_primary_monitor()
-                if monitor is None and display.get_n_monitors() > 0:
-                    monitor = display.get_monitor(0)
-                if monitor is not None:
-                    GtkLayerShell.set_monitor(self, monitor)
                 return
         except (GLib.Error, AttributeError, RuntimeError) as error:
             print(f"GTK layer-shell setup failed: {error}", file=sys.stderr)
@@ -549,6 +551,7 @@ class DashboardApplication(Gtk.Application):
         self.desktop_mode = desktop_mode
         self.window = None
         self._held_for_desktop = False
+        self._desktop_attempts = 0
 
     def do_activate(self):
         if self.window is not None:
@@ -558,24 +561,40 @@ class DashboardApplication(Gtk.Application):
             if not self._held_for_desktop:
                 self.hold()
                 self._held_for_desktop = True
-            GLib.timeout_add(750, self._open_window)
+            GLib.timeout_add(DESKTOP_START_DELAY_MS, self._open_window)
             return
         self._open_window()
 
+    @staticmethod
+    def _session_is_ready():
+        if not os.environ.get("WAYLAND_DISPLAY") and not os.environ.get("DISPLAY"):
+            return False
+        display = Gdk.Display.get_default()
+        return display is not None and display.get_n_monitors() > 0
+
+    def _release_desktop_hold(self):
+        if self._held_for_desktop:
+            self._held_for_desktop = False
+            self.release()
+
     def _open_window(self):
+        if self.window is not None:
+            self.window.present()
+            self._release_desktop_hold()
+            return GLib.SOURCE_REMOVE
+        if self.desktop_mode and not self._session_is_ready():
+            self._desktop_attempts += 1
+            if self._desktop_attempts < DESKTOP_START_ATTEMPTS:
+                return GLib.SOURCE_CONTINUE
         try:
-            if self.window is None:
-                self.window = Dashboard(self, self.desktop_mode)
-                self.window.connect("destroy", self._window_closed)
+            self.window = Dashboard(self, self.desktop_mode)
+            self.window.connect("destroy", self._window_closed)
             self.window.present()
         except (OSError, ValueError, RuntimeError, GLib.Error, AttributeError, TypeError) as error:
             print(f"Desktop widgets failed to start: {error}", file=sys.stderr)
             if not self.desktop_mode:
                 self.quit()
-        finally:
-            if self._held_for_desktop:
-                self._held_for_desktop = False
-                self.release()
+        self._release_desktop_hold()
         return GLib.SOURCE_REMOVE
 
     def _window_closed(self, *_args):

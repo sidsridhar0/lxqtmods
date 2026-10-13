@@ -2,8 +2,10 @@
 
 import logging
 import re
+import shutil
 import subprocess
 import time
+from pathlib import Path
 
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
@@ -15,11 +17,13 @@ SWIPE_END = re.compile(r"GESTURE_SWIPE_END\b.*?\s(\d+)(?:\s+\S+)?\s*$")
 UP_THRESHOLD = -35.0
 MAX_SWIPE_DURATION = 2.0
 SWITCHER_HOLD_MS = 8000
+DEVICES_FILE = Path("/proc/bus/input/devices")
 
 
 def window_switcher_command():
+    wtype = shutil.which("wtype") or "/usr/bin/wtype"
     return [
-        "/usr/bin/wtype",
+        wtype,
         "-M",
         "alt",
         "-P",
@@ -33,10 +37,45 @@ def window_switcher_command():
     ]
 
 
-def monitor():
-    logging.info("Listening for three-finger touchpad swipes.")
+def touchpad_event_paths():
+    try:
+        text = DEVICES_FILE.read_text(encoding="utf-8", errors="replace")
+    except OSError:
+        return []
+
+    paths = []
+    name = ""
+    for line in text.splitlines():
+        if line.startswith("N: Name="):
+            name = line.split("=", 1)[1].strip().strip('"').lower()
+            continue
+        if not line.startswith("H: Handlers="):
+            continue
+        is_touchpad = (
+            "touchpad" in name or "trackpad" in name or "synaptics" in name
+        ) and "touchscreen" not in name
+        if is_touchpad:
+            for token in line.split(":", 1)[-1].split():
+                if token.startswith("event"):
+                    paths.append(Path("/dev/input") / token)
+        name = ""
+    return [path for path in paths if path.exists()]
+
+
+def libinput_command(devices):
+    command = ["/usr/bin/libinput", "debug-events"]
+    for device in devices:
+        command.extend(["--device", str(device)])
+    return command
+
+
+def monitor(devices):
+    logging.info(
+        "Listening for three-finger swipes on %s.",
+        ", ".join(str(device) for device in devices),
+    )
     process = subprocess.Popen(
-        ["/usr/bin/libinput", "debug-events"],
+        libinput_command(devices),
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
         text=True,
@@ -111,8 +150,12 @@ def monitor():
 
 
 if __name__ == "__main__":
+    devices = touchpad_event_paths()
+    if not devices:
+        logging.info("No touchpad event device found; gesture monitor will stay idle.")
+        raise SystemExit(0)
     try:
-        monitor()
+        monitor(devices)
     except (OSError, subprocess.CalledProcessError, RuntimeError) as error:
         logging.error("Touchpad gesture monitor stopped: %s", error)
         raise SystemExit(1) from error

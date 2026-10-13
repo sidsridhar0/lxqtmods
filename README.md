@@ -6,6 +6,10 @@ Modern-Minimal-Dark theme and wallpaper, moves the panel to the left edge, and
 adds live display-mode switching for Miriway. The left Quick Launch also pins
 Helium, Visual Studio Code, Spotify, and a custom widgets dashboard.
 
+Session extras are kept off the login and compositor critical path: the Fedora
+SDDM greeter is left unchanged, displays default to the laptop screen, and the
+desktop widget starts after the session is up.
+
 ## Deploy
 
 From a fresh Fedora LXQt install with an active Miriway session:
@@ -17,18 +21,22 @@ cd lxqtmods
 ```
 
 The script installs Spotify from Flathub and downloads the current stable
-x86_64 Helium AppImage from Helium's official release metadata. User settings
-are installed in your home directory. Run it from a terminal with sudo access
-to install GTK layer-shell, wtype, Power Profiles, and the custom SDDM login
-theme, and to enable touchpad gesture input.
+x86_64 Helium AppImage from Helium's official release metadata. Those app
+installs are optional: a download failure does not roll back desktop settings.
+User settings are installed in your home directory. Run it from a terminal with
+sudo access to install GTK layer-shell, wtype, and Power Profiles, and to
+enable touchpad gesture input.
 
-Press **F7** to cycle from extended screens to laptop-only, external-only,
-duplicated, then extended screens again. Miriway applies each mode live and
-shows a notification. The saved display profile matches the setup this was
-created on: `eDP-1` at 1920x1080 and an external DisplayPort monitor at
-3440x1440. The profiles accept either `DisplayPort-1` or `DisplayPort-2`
-(kernel `DP-1`/`DP-2`) for the external display. If your connector names or
-resolutions differ, edit `config/miriway-shell.display-config` before deploying.
+If an earlier deploy selected the custom login theme and graphical login fails,
+run `./deploy.sh` from a TTY with sudo access, or delete
+`/etc/sddm.conf.d/90-lxqtmods.conf` and reboot.
+
+Press **F7** after login to cycle from laptop-only to external-only, then
+extended screens. Duplicate mode uses the same extended layout so it never
+forces a guessed resolution onto a monitor. Deploy writes a display profile
+from currently connected outputs and only enables one external display. The
+login layout is the laptop screen. If connector probing fails, a laptop-only
+fallback is installed.
 
 ## Applying changes
 
@@ -40,11 +48,11 @@ accents, and monospaced typography to a dark graphite palette. Main settings
 live in `config/`; the custom Qt/GTK styles and wallpaper are under `assets/`.
 
 The dashboard is pinned to the top-left desktop and starts from LXQt autostart
-after the session is up, so a widget failure cannot take down Miriway. It uses
-the top layer so the desktop surface cannot cover it; it can remain above
-application windows. It shows live CPU and memory usage, an equalizer-style
-master-volume meter with a draggable volume slider, battery charge and status,
-and a persistent checklist.
+after the session is up, so a widget failure cannot take down Miriway. It waits
+until a monitor is present, then uses the top layer so the desktop surface
+cannot cover it; it can remain above application windows. It shows live CPU
+and memory usage, an equalizer-style master-volume meter with a draggable
+volume slider, battery charge and status, and a persistent checklist.
 If PipeWire has not created a default audio sink yet at login, the dashboard
 still opens and retries volume synchronization.
 The battery action switches between Balanced and Power Saver profiles; the
@@ -60,21 +68,17 @@ open windows. Miriway also provides the built-in <kbd>Alt</kbd>+<kbd>Tab</kbd>
 application switcher and <kbd>Alt</kbd>+<kbd>Grave</kbd> window switcher.
 
 The deploy script configures a three-finger swipe up to open Miriway's window
-switcher. This needs `wtype`, a libinput gesture monitor, and access to input
-devices by adding the account to the `input` group. That permission covers all
-input devices, not only the touchpad. Log out and back in after deployment for
-the group membership to take effect.
+switcher. This needs `wtype`, a libinput gesture monitor, and access to
+touchpad event nodes by adding the account to the `input` group. The monitor
+opens only touchpad devices and starts with the graphical session, not at
+user-login on a TTY. Log out and back in after deployment for the group
+membership to take effect.
 
 Mouse and touchpad scrolling are configured as reversed (natural) scrolling in
 both axes.
 
-The optional SDDM theme uses a dark graphite surface and mint accents. It is
-installed under `/usr/share/sddm/themes/Modern-Minimal` and selected by
-`/etc/sddm.conf.d/90-lxqtmods.conf`; the change applies at the next greeter
-start. The theme uses only QtQuick primitives (no QtQuick.Controls or
-SddmComponents) and ships `metadata.desktop` so SDDM starts the Qt 6 greeter
-on Fedora. These system-level steps are skipped with a clear message when
-deploy is run non-interactively.
+Login uses the distro SDDM greeter. A custom theme is not selected, so a QML
+error cannot block sign-in.
 
 ## Notes
 

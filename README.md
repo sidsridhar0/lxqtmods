@@ -40,8 +40,10 @@ accents, and monospaced typography to a dark graphite palette. Main settings
 live in `config/`; the custom Qt/GTK styles and wallpaper are under `assets/`.
 
 The dashboard is pinned to the top-left desktop and starts with Miriway. It
-shows live CPU and memory usage, an equalizer-style master-volume meter with a
-draggable volume slider, battery charge and status, and a persistent checklist.
+uses the top layer so the desktop surface cannot cover it; it can remain above
+application windows. It shows live CPU and memory usage, an equalizer-style
+master-volume meter with a draggable volume slider, battery charge and status,
+and a persistent checklist.
 The battery action switches between Balanced and Power Saver profiles; the
 deployment script installs and enables `power-profiles-daemon` for this feature.
 Todo items are saved under `~/.local/state/lxqtmods/todos.json`. **Desktop

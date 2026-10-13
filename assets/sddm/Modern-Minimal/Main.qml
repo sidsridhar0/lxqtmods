@@ -1,5 +1,5 @@
 import QtQuick 2.15
-import QtQuick.Controls 2.15
+import QtQuick.Controls 2.15 as Controls
 import QtQuick.Layouts 1.15
 import SddmComponents 2.0
 
@@ -109,7 +109,7 @@ Rectangle {
                     font.family: "monospace"
                 }
 
-                TextField {
+                Controls.TextField {
                     id: username
                     Layout.fillWidth: true
                     text: userModel.lastUser
@@ -133,7 +133,7 @@ Rectangle {
                     font.family: "monospace"
                 }
 
-                TextField {
+                Controls.TextField {
                     id: password
                     Layout.fillWidth: true
                     placeholderText: "Password"
@@ -150,7 +150,7 @@ Rectangle {
                     }
                 }
 
-                Button {
+                Controls.Button {
                     id: sessionButton
                     Layout.fillWidth: true
                     text: sessionModel.rowCount() > 0
@@ -174,7 +174,7 @@ Rectangle {
                     }
                 }
 
-                Button {
+                Controls.Button {
                     id: loginButton
                     Layout.fillWidth: true
                     Layout.topMargin: 5

@@ -173,7 +173,12 @@ class Dashboard(Gtk.ApplicationWindow):
         volume_body.pack_start(volume_row, False, False, 0)
         volume_row.pack_start(self.volume_scale, True, True, 0)
         volume_row.pack_end(self.volume_value, False, False, 0)
-        self._volume_sync()
+        try:
+            self._volume_sync()
+        except (OSError, subprocess.CalledProcessError, RuntimeError) as error:
+            self.volume_scale.set_sensitive(False)
+            self.volume_value.set_text("Unavailable")
+            self.message.set_text(f"Could not read master volume: {error}")
 
         battery_card, battery_body = self._card(content, "BATTERY")
         battery_row = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10)
@@ -410,8 +415,11 @@ class Dashboard(Gtk.ApplicationWindow):
         if not match:
             raise RuntimeError(f"Unexpected wpctl volume response: {output}")
         percent = min(100, max(0, round(float(match.group(1)) * 100)))
+        self.volume_scale.set_sensitive(True)
         self.volume_scale.set_value(percent)
         self.volume_value.set_text(f"{percent}%")
+        if self.message.get_text().startswith("Could not read master volume:"):
+            self.message.set_text("")
 
     def _toggle_power_profile(self, *_args):
         try:
@@ -508,6 +516,8 @@ class Dashboard(Gtk.ApplicationWindow):
             try:
                 self._volume_sync()
             except (OSError, subprocess.CalledProcessError, RuntimeError) as error:
+                self.volume_scale.set_sensitive(False)
+                self.volume_value.set_text("Unavailable")
                 self.message.set_text(f"Could not read master volume: {error}")
         return GLib.SOURCE_CONTINUE
 

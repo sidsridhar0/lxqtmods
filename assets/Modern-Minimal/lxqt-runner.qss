@@ -1,6 +1,21 @@
 QToolTip {
-    color: #e6edf3;
-    background: #202933;
-    border: 1px solid #394651;
-    padding: 5px 8px;
+    color: #eee9dc;
+    background: #292c2d;
+    border: 2px solid #090a0a;
+    border-radius: 8px;
+    padding: 6px 9px;
+}
+
+QWidget {
+    color: #eee9dc;
+    background-color: #191b1c;
+    selection-color: #101313;
+    selection-background-color: #91d7cc;
+}
+
+QLineEdit {
+    background-color: #242728;
+    border: 2px solid #090a0a;
+    border-radius: 8px;
+    padding: 7px 10px;
 }

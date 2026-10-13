@@ -1,5 +1,5 @@
 layouts:
-  default:
+  default: &extended
     cards:
     - card-id: 0
       eDP-1:
@@ -9,15 +9,20 @@ layouts:
         orientation: normal
         scale: 1
         group: 0
-      DisplayPort-2:
+      DisplayPort-1:
         state: enabled
         mode: 3440x1440@60.0
         position: [1920, 0]
         orientation: normal
         scale: 1
         group: 0
+      DisplayPort-2:
+        state: disabled
 
-  side_by_side:
+  side_by_side: *extended
+  extended: *extended
+
+  first-screen:
     cards:
     - card-id: 0
       eDP-1:
@@ -27,10 +32,42 @@ layouts:
         orientation: normal
         scale: 1
         group: 0
+      DisplayPort-1:
+        state: disabled
       DisplayPort-2:
+        state: disabled
+
+  second-screen:
+    cards:
+    - card-id: 0
+      eDP-1:
+        state: disabled
+      DisplayPort-1:
         state: enabled
         mode: 3440x1440@60.0
-        position: [1920, 0]
+        position: [0, 0]
         orientation: normal
         scale: 1
         group: 0
+      DisplayPort-2:
+        state: disabled
+
+  duplicate:
+    cards:
+    - card-id: 0
+      eDP-1:
+        state: enabled
+        mode: 1920x1080@60.0
+        position: [0, 0]
+        orientation: normal
+        scale: 1
+        group: 1
+      DisplayPort-1:
+        state: enabled
+        mode: 1920x1080@60.0
+        position: [0, 0]
+        orientation: normal
+        scale: 1
+        group: 1
+      DisplayPort-2:
+        state: disabled

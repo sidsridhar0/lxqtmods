@@ -63,19 +63,64 @@ install -m 644 "$ROOT/assets/Modern-Minimal/lxqt-runner.qss" \
     "$DATA_DIR/lxqt/themes/Modern-Minimal/lxqt-runner.qss"
 install -m 644 "$ROOT/assets/Modern-Minimal/lxqt-notificationd.qss" \
     "$DATA_DIR/lxqt/themes/Modern-Minimal/lxqt-notificationd.qss"
+install -m 644 "$ROOT/assets/Modern-Minimal/lxqt-config.qss" \
+    "$DATA_DIR/lxqt/themes/Modern-Minimal/lxqt-config.qss"
 install -m 644 "$ROOT/assets/modern-minimal.svg" "$DATA_DIR/backgrounds/modern-minimal.svg"
+install -D -m 644 "$ROOT/assets/Modern-Minimal-Dark/index.theme" \
+    "$DATA_DIR/themes/Modern-Minimal-Dark/index.theme"
+install -D -m 644 "$ROOT/assets/Modern-Minimal-Dark/gtk-3.0/gtk.css" \
+    "$DATA_DIR/themes/Modern-Minimal-Dark/gtk-3.0/gtk.css"
+install -D -m 755 "$ROOT/display-mode.sh" "$HOME/.local/bin/lxqtmods-display-mode"
 
 display_config="$CONFIG_DIR/miriway-shell.display-config"
 backup_once "$display_config"
 install -D -m 644 "$ROOT/config/miriway-shell.display-config" "$display_config"
+
+display_layout="$display_config-layout"
+backup_once "$display_layout"
+printf 'extended\n' > "$display_layout"
+
+display_mode_script="$HOME/.local/bin/lxqtmods-display-mode"
+settings_file="$CONFIG_DIR/lxqt/miriway-shell.settings"
+backup_once "$settings_file"
+python3 - "$settings_file" "$display_mode_script" <<'PY'
+import os
+import shlex
+import sys
+import tempfile
+
+settings_file, script = sys.argv[1:]
+os.makedirs(os.path.dirname(settings_file), exist_ok=True)
+try:
+    with open(settings_file, encoding="utf-8") as stream:
+        lines = stream.read().splitlines()
+except FileNotFoundError:
+    lines = []
+
+lines = [line for line in lines if not line.startswith("command_shell_plain=F7:")]
+lines.append(f"command_shell_plain=F7:{shlex.quote(script)}")
+
+fd, temporary_file = tempfile.mkstemp(dir=os.path.dirname(settings_file))
+try:
+    with os.fdopen(fd, "w", encoding="utf-8") as stream:
+        stream.write("\n".join(lines) + "\n")
+    os.replace(temporary_file, settings_file)
+except BaseException:
+    os.unlink(temporary_file)
+    raise
+PY
 
 mkdir -p "$APP_DIR"
 release_url="$(
     curl -fsSL https://files.helium.computer/releases.json |
         python3 -c 'import json,sys; print(json.load(sys.stdin)["linux"]["stable"]["x86_64"])'
 )"
-curl -fL --retry 2 "$release_url" -o "$APP_DIR/helium.AppImage"
-chmod 755 "$APP_DIR/helium.AppImage"
+temporary_app="$(mktemp "$APP_DIR/helium.AppImage.XXXXXX")"
+trap 'rm -f -- "$temporary_app"' EXIT
+curl -fL --retry 2 "$release_url" -o "$temporary_app"
+chmod 755 "$temporary_app"
+mv -f -- "$temporary_app" "$APP_DIR/helium.AppImage"
+trap - EXIT
 
 python3 - "$HOME" "$DATA_DIR" <<'PY'
 import os
@@ -111,4 +156,5 @@ flatpak remote-add --user --if-not-exists flathub \
     https://dl.flathub.org/repo/flathub.flatpakrepo
 flatpak install --user --noninteractive --assumeyes flathub com.spotify.Client
 
-printf '\nSetup installed. Log out and back in to apply the panel, wallpaper, and display layout.\n'
+printf '\nSetup installed. Log out and back in to apply the theme and panel changes.\n'
+printf 'Press F7 to cycle display modes; the extended layout is active by default.\n'

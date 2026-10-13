@@ -1,0 +1,58 @@
+QWidget {
+    color: #eee9dc;
+    background-color: #191b1c;
+    selection-color: #101313;
+    selection-background-color: #91d7cc;
+}
+
+QToolTip {
+    color: #eee9dc;
+    background-color: #292c2d;
+    border: 2px solid #090a0a;
+    border-radius: 8px;
+    padding: 6px 9px;
+}
+
+QPushButton,
+QComboBox,
+QLineEdit,
+QSpinBox,
+QDoubleSpinBox {
+    color: #eee9dc;
+    background-color: #292c2d;
+    border: 2px solid #090a0a;
+    border-radius: 8px;
+    padding: 6px 9px;
+}
+
+QPushButton:hover,
+QComboBox:hover {
+    color: #101313;
+    background-color: #91d7cc;
+}
+
+QPushButton:pressed {
+    background-color: #79bdb3;
+}
+
+QTabBar::tab {
+    color: #eee9dc;
+    background-color: #242728;
+    border: 2px solid #090a0a;
+    border-bottom: none;
+    border-top-left-radius: 8px;
+    border-top-right-radius: 8px;
+    padding: 7px 11px;
+}
+
+QTabBar::tab:selected {
+    color: #101313;
+    background-color: #91d7cc;
+}
+
+QHeaderView::section {
+    color: #eee9dc;
+    background-color: #292c2d;
+    border: 2px solid #090a0a;
+    padding: 6px;
+}

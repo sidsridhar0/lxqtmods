@@ -293,6 +293,17 @@ hide_login_session() {
     printf '\nHidden=true\n' | sudo tee -a "$file" >/dev/null
 }
 
+restore_login_session() {
+    local file="$1"
+    if sudo test -e "$file.lxqtmods.bak"; then
+        sudo mv -f -- "$file.lxqtmods.bak" "$file"
+        return 0
+    fi
+    if sudo test -f "$file"; then
+        sudo sed -i '/^Hidden=/d' "$file"
+    fi
+}
+
 restore_sddm_default() {
     local sddm_theme_dir=/usr/share/sddm/themes/Modern-Minimal
     local sddm_dropin=/etc/sddm.conf.d/90-lxqtmods.conf
@@ -321,10 +332,11 @@ if command -v sudo >/dev/null 2>&1 && [[ -t 0 ]]; then
             || warn "Could not add $DEPLOY_USER to the input group."
     fi
     restore_sddm_default || warn "Could not restore the distro SDDM greeter."
-    hide_login_session /usr/share/xsessions/lxqt.desktop \
-        || warn "Could not hide the X11 LXQt session."
-    hide_login_session /usr/share/wayland-sessions/openbox.desktop \
-        || warn "Could not hide the Openbox Wayland session."
+    restore_login_session /usr/share/xsessions/lxqt.desktop \
+        || warn "Could not restore the LXQt Desktop session."
+    for session in /usr/share/wayland-sessions/*.desktop; do
+        hide_login_session "$session" || warn "Could not hide $session."
+    done
     for session in /usr/share/xsessions/openbox.desktop /usr/share/xsessions/openbox-*.desktop; do
         hide_login_session "$session" || warn "Could not hide $session."
     done

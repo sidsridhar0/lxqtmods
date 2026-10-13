@@ -78,8 +78,8 @@ Mouse and touchpad scrolling are configured as reversed (natural) scrolling in
 both axes.
 
 Login uses the distro SDDM greeter. A custom theme is not selected, so a QML
-error cannot block sign-in. The X11 LXQt and Openbox sessions are hidden so
-only the working Wayland LXQt desktop appears at the greeter.
+error cannot block sign-in. Openbox and Wayland sessions are hidden so only LXQt Desktop appears at the
+greeter.
 
 ## Notes
 

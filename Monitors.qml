@@ -799,7 +799,7 @@ Singleton {
     // ---- workspaces ---------------------------------------------------------
     // shared: a workspace opens wherever you are. split: each one belongs to a
     // display, stored by key like the rest, so it follows the monitor between ports
-    readonly property int workspaceCount: 10
+    readonly property int workspaceCount: 2
     readonly property var workspacePlan: {
         let p = {};
         try {

@@ -1,7 +1,7 @@
 if hl.plugin.dynamic_cursors then
   hl.config { plugin = { dynamic_cursors = {
     enabled   = true,
-    mode      = "rotate",   -- "tilt" | "rotate" | "stretch" | "none"
+    mode      = "none",     -- keep the pointer upright
     threshold = 2,        -- min angle change (°) before redraw; lower = smoother
 
     rotate = {

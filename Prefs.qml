@@ -773,14 +773,7 @@ Singleton {
     }
 
     readonly property var builtinThemes: [
-        { "id": "matugen", "name": "Matugen", "desc": "Colors generated from your wallpaper", "swatchBg": "#12171a", "swatchAccent": "#8ad0ee" },
-        { "id": "pywal", "name": "Pywal", "desc": "Wallpaper colors via pywal's classic palette", "swatchBg": "#1a1e24", "swatchAccent": "#c9a1a9" },
-        { "id": "catppuccin-mocha", "name": "Catppuccin Mocha", "desc": "Soothing pastel dark theme", "swatchBg": "#1e1e2e", "swatchAccent": "#89b4fa" },
-        { "id": "gruvbox", "name": "Gruvbox", "desc": "Retro groove warm palette", "swatchBg": "#282828", "swatchAccent": "#83a598" },
-        { "id": "nightfox", "name": "Nightfox", "desc": "Deep navy with muted blue accents", "swatchBg": "#192330", "swatchAccent": "#719cd6" },
-        { "id": "nord", "name": "Nord", "desc": "Arctic blue-grey palette", "swatchBg": "#232831", "swatchAccent": "#88c0d0" },
-        { "id": "tokyo-night", "name": "Tokyo Night", "desc": "Dark blues and violets", "swatchBg": "#1a1b26", "swatchAccent": "#7aa2f7" },
-        { "id": "colour", "name": "Your colour", "desc": "A palette built from one colour you pick", "swatchBg": "#14121a", "swatchAccent": root.themeColour }
+        { "id": "matugen", "name": "Matugen", "desc": "Colors generated from your wallpaper", "swatchBg": "#12171a", "swatchAccent": "#8ad0ee" }
     ]
     // themes imported from a scheme repo, read back from their meta.json
     property var userThemes: []
@@ -846,13 +839,13 @@ Singleton {
         "systemTiles": "dnd,awake,dark,airplane,location,mic,capture,record,picker,keyboard,timer,session",
         "barLayout": "{\"left\":[\"workspaces\",\"media\",\"tray\"],\"center\":[\"clock\"],\"right\":[\"notifications\",\"system\"]}",
         "showWorkspaces": true,
-        "showMedia": true,
+        "showMedia": false,
         "showTray": true,
         "showKbLayout": true,
         "gameModeOnCmd": "",
         "gameModeOffCmd": "",
         "gameModeStatusCmd": "",
-        "showClock": true,
+        "showClock": false,
         "showNotifications": true,
         "showSystem": true,
         "showPrivacy": false,
@@ -872,7 +865,7 @@ Singleton {
         "windowModuleScroll": true,
         "windowModuleMiddleClose": false,
         "windowModuleStyle": "plain",
-        "workspacesByDisplay": true,
+        "workspacesByDisplay": false,
         "audioMeters": true,
         "clockStyle": "accent",
         "clockDateFormat": "dayMonth",
@@ -884,7 +877,7 @@ Singleton {
         "mediaPlayButton": true,
         "mediaWheelVolume": true,
         "workspacesStyle": "dots",
-        "workspacesShown": 6,
+        "workspacesShown": 2,
         "workspacesWheel": true,
         "notificationsStyle": "badge",
         "trayStyle": "collapsed",
@@ -1437,13 +1430,13 @@ Singleton {
             property string systemTiles: "dnd,awake,dark,airplane,location,mic,capture,record,picker,keyboard,timer,session"
             property string barLayout: "{\"left\":[\"workspaces\",\"media\",\"tray\"],\"center\":[\"clock\"],\"right\":[\"notifications\",\"system\"]}"
             property bool showWorkspaces: true
-            property bool showMedia: true
+            property bool showMedia: false
             property bool showTray: true
             property bool showKbLayout: true
             property string gameModeOnCmd: ""
             property string gameModeOffCmd: ""
             property string gameModeStatusCmd: ""
-            property bool showClock: true
+            property bool showClock: false
             property bool showNotifications: true
             property bool showSystem: true
             property bool showPrivacy: false
@@ -1463,7 +1456,7 @@ Singleton {
             property bool windowModuleScroll: true
             property bool windowModuleMiddleClose: false
             property string windowModuleStyle: "plain"
-            property bool workspacesByDisplay: true
+            property bool workspacesByDisplay: false
             property bool audioMeters: true
             property string clockStyle: "accent"
             property string clockDateFormat: "dayMonth"
@@ -1475,7 +1468,7 @@ Singleton {
             property bool mediaPlayButton: true
             property bool mediaWheelVolume: true
             property string workspacesStyle: "dots"
-            property int workspacesShown: 6
+            property int workspacesShown: 2
             property bool workspacesWheel: true
             property string notificationsStyle: "badge"
             property string trayStyle: "collapsed"

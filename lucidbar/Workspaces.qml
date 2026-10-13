@@ -74,8 +74,8 @@ Item {
     readonly property int maxWorkspaces: Prefs.workspacesShown
     // the overview has every workspace the keys reach, made yet or not; the bar
     // keeps to the first few and whatever is open past them
-    readonly property int slotCount: Math.max(Monitors.workspaceCount, root.highestWorkspaceId)
-    readonly property int barCount: Math.max(root.maxWorkspaces, root.highestWorkspaceId)
+    readonly property int slotCount: root.maxWorkspaces
+    readonly property int barCount: root.maxWorkspaces
     // with more than one display, each workspace shows which one it is on,
     // numbered as the Displays page and its Identify overlay number them
     readonly property bool multiDisplay: Prefs.workspacesByDisplay && Monitors.workspaceKeys.length > 1

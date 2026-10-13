@@ -102,7 +102,7 @@ local function apply(entry)
     local runs = { {} }
     if entry.each == "workspace" then
         runs = {}
-        for i = 1, 10 do runs[i] = { i, i % 10 } end
+        for i = 1, 2 do runs[i] = { i, i % 10 } end
     end
     for _, r in ipairs(runs) do
         status.total = status.total + 1

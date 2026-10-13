@@ -6,8 +6,8 @@
 hl.gesture({ fingers = 3, direction = "horizontal", action = "workspace" })
 hl.gesture({ fingers = 4, direction = "horizontal", action = "workspace" })
 
--- Pre-create workspaces 1-5 so gesture swipes can always live-track to them
-for i = 1, 6 do
+-- Pre-create the two desktops so gesture swipes can always live-track to them
+for i = 1, 2 do
     hl.workspace_rule({ workspace = tostring(i), persistent = true })
 end
 

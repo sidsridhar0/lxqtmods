@@ -3,6 +3,12 @@
 ---------------
 
 hl.config({
+    general = {
+        snap = {
+            enabled = false,
+        },
+    },
+
     input = {
         kb_layout  = "us",
         kb_variant = "",
@@ -17,6 +23,10 @@ hl.config({
         touchpad = {
             natural_scroll = true,
             scroll_factor  = 0.4,
+        },
+
+        touchdevice = {
+            output = "eDP-1",
         },
     },
 })

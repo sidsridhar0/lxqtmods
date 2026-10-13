@@ -352,12 +352,35 @@ Item {
         Hyprland.dispatch("hl.dsp.focus({window='address:" + addrs[next] + "'})");
     }
 
-    function launch() {
+    function launch(forceNewWindow) {
         if (dockItem.command === "")
             return;
 
-        Quickshell.execDetached(["sh", "-c", dockItem.command]);
+        var command = dockItem.command;
+        var appId = dockItem.appId.toLowerCase();
+        if (forceNewWindow && (appId === "helium" || appId === "com.microsoft.vscode") && command.indexOf("--new-window") === -1)
+            command += " --new-window";
+
+        Quickshell.execDetached(["sh", "-c", command]);
         dockItem.launched();
+    }
+
+    function focusOrLaunch() {
+        var addresses = dockItem.clientStats.addresses;
+        if (addresses.length === 0) {
+            dockItem.launch(false);
+            return;
+        }
+
+        var address = addresses.indexOf(dockItem.focusedAddress) >= 0 ? dockItem.focusedAddress : addresses[0];
+        Hyprland.dispatch("hl.dsp.focus({window='address:" + address + "'})");
+    }
+
+    Timer {
+        id: appTapTimer
+
+        interval: 300
+        onTriggered: dockItem.focusOrLaunch()
     }
 
     onFocusedAddressChanged: dockItem.cycleAnchor = -1
@@ -370,14 +393,12 @@ Item {
                 dockItem.requestToggle();
                 return;
             }
-            if (dockItem.active && dockItem.matchingClient) {
-                var winWs = dockItem.matchingClient.workspace ? dockItem.matchingClient.workspace.id : -1;
-                if (dockItem.distinctWorkspaceCount >= 2 || dockItem.windowCount >= 2 || winWs !== dockItem.activeWorkspaceId) {
-                    dockItem.requestStackPopup();
-                    return;
-                }
+            if (appTapTimer.running) {
+                appTapTimer.stop();
+                dockItem.launch(true);
+            } else {
+                appTapTimer.start();
             }
-            dockItem.launch();
         }
     }
 

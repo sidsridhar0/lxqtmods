@@ -1,0 +1,686 @@
+import QtQuick
+import Quickshell
+import Quickshell.Io
+import Quickshell.Widgets
+import qs
+import qs.lucidui
+
+Column {
+    id: page
+
+    readonly property string home: Quickshell.env("HOME")
+    readonly property string currentTheme: Prefs.currentTheme
+    readonly property var modeOptions: [{
+        "key": "dark",
+        "label": "Dark"
+    }, {
+        "key": "light",
+        "label": "Light"
+    }]
+    // the two wallpaper-derived themes re-extract; everything else is authored
+    // dark and gets a light variant built from its own colours
+    readonly property string modeHint: page.currentTheme === "matugen" || page.currentTheme === "pywal" ? "Re-derives the palette from your wallpaper in the mode you pick. Applications are asked to match." : (page.currentTheme === "colour" ? "Builds the palette from your colour again in the mode you pick. Applications are asked to match." : "Builds a light palette from this theme's own colours. Applications are asked to match.")
+    property string appliedWallpaper: ""
+    // same folder the dock's wallpaper strip browses
+    readonly property string wallpaperDir: Prefs.wallpaperDir
+    function applyTheme(id) {
+        if (id === page.currentTheme)
+            return ;
+
+        Prefs.themeChangeRequested(id);
+    }
+
+    function applyWallpaper(path) {
+        if (path === "")
+            return;
+
+        Quickshell.execDetached([page.home + "/.config/hypr/scripts/wallpaper/set-wallpaper.sh", path]);
+    }
+
+    spacing: Theme.dp(26)
+
+    onWallpaperDirChanged: wallpaperScan.restart()
+
+    Process {
+        id: themeDelete
+
+        stdout: StdioCollector {
+            onStreamFinished: Prefs.rescanThemes()
+        }
+
+    }
+
+    Connections {
+        function onThemeDeleteRequested(id) {
+            themeDelete.running = false;
+            themeDelete.command = ["sh", "-c", "rm -rf \"" + page.home + "/.config/lucid/themes/" + id + "\"; echo done"];
+            themeDelete.running = true;
+        }
+
+        target: Prefs
+    }
+
+    Process {
+        id: wallpaperScan
+
+        function restart() {
+            wallpaperScan.running = false;
+            wallpaperScan.command = ["sh", "-c", "d=\"" + page.wallpaperDir + "\"; [ -d \"$d\" ] || exit 0; find \"$d\" -maxdepth 1 -type f \\( -iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.png' -o -iname '*.webp' \\) | sort"];
+            wallpaperScan.running = true;
+        }
+
+        stdout: StdioCollector {
+            onStreamFinished: {
+                wallpapers.clear();
+                var lines = text.split("\n");
+                for (var i = 0; i < lines.length; i++) {
+                    var p = lines[i].trim();
+                    if (p === "")
+                        continue;
+
+                    var base = p.substring(p.lastIndexOf("/") + 1);
+                    var dot = base.lastIndexOf(".");
+                    wallpapers.append({
+                        "path": p,
+                        "name": dot > 0 ? base.substring(0, dot) : base
+                    });
+                }
+            }
+        }
+
+    }
+
+    Process {
+        id: wallpaperPicker
+
+        stdout: StdioCollector {
+            onStreamFinished: {
+                var chosen = text.trim();
+                if (chosen === "")
+                    return;
+
+                wallpaperImport.command = ["sh", "-c", "mkdir -p \"" + page.wallpaperDir + "\" && cp -n \"" + chosen + "\" \"" + page.wallpaperDir + "/\" && echo \"" + page.wallpaperDir + "/$(basename \"" + chosen + "\")\""];
+                wallpaperImport.running = true;
+            }
+        }
+
+    }
+
+    Process {
+        id: wallpaperImport
+
+        stdout: StdioCollector {
+            onStreamFinished: {
+                var added = text.trim();
+                wallpaperScan.restart();
+                Prefs.wallpapersChanged();
+                if (added !== "")
+                    page.applyWallpaper(added);
+
+            }
+        }
+
+    }
+
+    FileView {
+        path: page.home + "/.cache/current_wallpaper"
+        blockLoading: true
+        watchChanges: true
+        onFileChanged: reload()
+        onLoaded: page.appliedWallpaper = text().trim()
+    }
+
+    Process {
+        id: wallpaperDelete
+
+        stdout: StdioCollector {
+            onStreamFinished: {
+                wallpaperScan.restart();
+                Prefs.wallpapersChanged();
+            }
+        }
+
+    }
+
+    Connections {
+        function onWallpaperDeleteRequested(path) {
+            wallpaperDelete.running = false;
+            wallpaperDelete.command = ["sh", "-c", "gio trash \"" + path + "\" 2>/dev/null || rm -f \"" + path + "\"; echo done"];
+            wallpaperDelete.running = true;
+        }
+
+        target: Prefs
+    }
+
+    ListModel {
+        id: wallpapers
+    }
+
+    // the grid reorders this in place, so it cannot just bind to the catalogue
+    ListModel {
+        id: themeTiles
+    }
+
+    function syncThemeTiles() {
+        // never yank the tiles out from under a drag in progress
+        if (themeGrid.dragging)
+            return;
+
+        themeTiles.clear();
+        var c = Prefs.themeCatalogue;
+        for (var i = 0; i < c.length; i++) {
+            themeTiles.append({
+                "themeId": c[i].id,
+                "themeName": c[i].name,
+                "tileBg": c[i].swatchBg,
+                "tileAccent": c[i].swatchAccent,
+                "isUser": c[i].user === true
+            });
+        }
+    }
+
+    Connections {
+        function onThemeCatalogueChanged() {
+            page.syncThemeTiles();
+        }
+
+        target: Prefs
+    }
+
+    Component.onCompleted: {
+        wallpaperScan.restart();
+        page.syncThemeTiles();
+    }
+
+    SettingCard {
+        title: "THEME"
+
+        SettingRow {
+            title: "Light or dark"
+            description: page.modeHint
+
+            M3Segmented {
+                width: Theme.dp(200)
+                current: Prefs.colorMode
+                options: page.modeOptions
+                onChosen: (key) => {
+                    return Prefs.setColorMode(key);
+                }
+            }
+
+        }
+
+        SettingRow {
+            title: "Colour scheme"
+            description: "Switching also swaps the wallpaper folder below to that theme's own."
+            showDivider: false
+            stacked: true
+
+            Item {
+                id: themeGrid
+
+                readonly property int tileW: Theme.dp(150)
+                readonly property int tileH: Theme.dp(60)
+                readonly property int gap: Theme.dp(10)
+                readonly property int perRow: Math.max(1, Math.floor((themeGrid.width + themeGrid.gap) / (themeGrid.tileW + themeGrid.gap)))
+                property bool dragging: false
+
+                width: parent.width
+                height: Math.max(0, Math.ceil(themeTiles.count / themeGrid.perRow) * (themeGrid.tileH + themeGrid.gap) - themeGrid.gap)
+
+                function commitOrder() {
+                    var ids = [];
+                    for (var i = 0; i < themeTiles.count; i++) ids.push(themeTiles.get(i).themeId);
+                    Prefs.setThemeOrder(ids);
+                }
+
+                Repeater {
+                    model: themeTiles
+
+                    Rectangle {
+                        id: swatch
+
+                        required property string themeId
+                        required property string themeName
+                        required property string tileBg
+                        required property string tileAccent
+                        required property bool isUser
+                        required property int index
+
+                        readonly property bool selected: page.currentTheme === swatch.themeId
+                        readonly property real targetX: (swatch.index % themeGrid.perRow) * (themeGrid.tileW + themeGrid.gap)
+                        readonly property real targetY: Math.floor(swatch.index / themeGrid.perRow) * (themeGrid.tileH + themeGrid.gap)
+
+                        // the tile owns x/y while dragging; the Binding takes them back after
+                        function reindex() {
+                            if (!themeDrag.active)
+                                return;
+
+                            var col = Math.round(swatch.x / (themeGrid.tileW + themeGrid.gap));
+                            var rowIdx = Math.round(swatch.y / (themeGrid.tileH + themeGrid.gap));
+                            col = Math.max(0, Math.min(themeGrid.perRow - 1, col));
+                            var candidate = Math.max(0, Math.min(themeTiles.count - 1, rowIdx * themeGrid.perRow + col));
+                            if (candidate !== swatch.index)
+                                themeTiles.move(swatch.index, candidate, 1);
+
+                        }
+
+                        width: themeGrid.tileW
+                        height: themeGrid.tileH
+                        radius: Theme.radiusMd
+                        z: themeDrag.active ? 10 : 1
+                        scale: themeDrag.active ? 1.05 : 1
+                        color: swatch.selected ? Theme.accentContainer : (swatchHover.hovered ? Theme.bgHover : Theme.bgSunken)
+                        onXChanged: swatch.reindex()
+                        onYChanged: swatch.reindex()
+
+                        Binding {
+                            target: swatch
+                            property: "x"
+                            value: swatch.targetX
+                            when: !themeDrag.active
+                        }
+
+                        Binding {
+                            target: swatch
+                            property: "y"
+                            value: swatch.targetY
+                            when: !themeDrag.active
+                        }
+
+                        Behavior on x {
+                            enabled: !themeDrag.active
+
+                            NumberAnimation {
+                                duration: Theme.ms(220)
+                                easing.type: Easing.OutCubic
+                            }
+
+                        }
+
+                        Behavior on y {
+                            enabled: !themeDrag.active
+
+                            NumberAnimation {
+                                duration: Theme.ms(220)
+                                easing.type: Easing.OutCubic
+                            }
+
+                        }
+
+                        Behavior on scale {
+                            NumberAnimation {
+                                duration: Theme.durShort
+                                easing.type: Easing.OutCubic
+                            }
+
+                        }
+
+                        Behavior on color {
+                            ColorAnimation {
+                                duration: Theme.durShort
+                            }
+
+                        }
+
+                        Row {
+                            anchors.left: parent.left
+                            anchors.leftMargin: Theme.dp(12)
+                            anchors.verticalCenter: parent.verticalCenter
+                            spacing: Theme.dp(10)
+
+                            Rectangle {
+                                width: Theme.dp(28)
+                                height: Theme.dp(28)
+                                radius: Theme.dp(14)
+                                anchors.verticalCenter: parent.verticalCenter
+                                color: swatch.tileBg
+
+                                Rectangle {
+                                    width: Theme.dp(12)
+                                    height: Theme.dp(12)
+                                    radius: Theme.dp(6)
+                                    anchors.centerIn: parent
+                                    color: swatch.tileAccent
+                                }
+
+                            }
+
+                            Text {
+                                width: Theme.dp(90)
+                                anchors.verticalCenter: parent.verticalCenter
+                                text: swatch.themeName
+                                color: swatch.selected ? Theme.text : Theme.subtext
+                                font.family: Theme.fontFamily
+                                font.pixelSize: Theme.fontLabel
+                                font.variableAxes: Theme.axes(Theme.fontLabel, (swatch.selected) ? 640 : 420, 0)
+                                font.bold: swatch.selected
+                                wrapMode: Text.WordWrap
+                            }
+
+                        }
+
+                        HoverHandler {
+                            id: swatchHover
+
+                            cursorShape: themeDrag.active ? Qt.ClosedHandCursor : Qt.PointingHandCursor
+                        }
+
+                        DragHandler {
+                            id: themeDrag
+
+                            target: swatch
+                            xAxis.minimum: 0
+                            xAxis.maximum: Math.max(0, themeGrid.width - themeGrid.tileW)
+                            yAxis.minimum: 0
+                            yAxis.maximum: Math.max(0, themeGrid.height - themeGrid.tileH)
+                            onActiveChanged: {
+                                themeGrid.dragging = themeDrag.active;
+                                if (!themeDrag.active)
+                                    themeGrid.commitOrder();
+
+                            }
+                        }
+
+                        TapHandler {
+                            onTapped: page.applyTheme(swatch.themeId)
+                        }
+
+                        Rectangle {
+                            id: themeDel
+
+                            readonly property bool shown: swatch.isUser && swatchHover.hovered && !themeDrag.active
+
+                            width: Theme.dp(22)
+                            height: Theme.dp(22)
+                            radius: Theme.dp(11)
+                            anchors.right: parent.right
+                            anchors.top: parent.top
+                            anchors.margins: Theme.dp(6)
+                            color: delHover.hovered ? Theme.error : Theme.alpha(Theme.cShadow, 0.65)
+                            opacity: themeDel.shown ? 1 : 0
+                            visible: themeDel.opacity > 0.01
+                            scale: themeDel.shown ? 1 : 0.7
+
+                            Behavior on opacity {
+                                NumberAnimation {
+                                    duration: Theme.durQuick
+                                }
+
+                            }
+
+                            Behavior on scale {
+                                NumberAnimation {
+                                    duration: Theme.durShort
+                                    easing.type: Theme.easeEmphasized
+                                    easing.overshoot: Theme.emphasizedOvershoot
+                                }
+
+                            }
+
+                            Behavior on color {
+                                ColorAnimation {
+                                    duration: Theme.durQuick
+                                }
+
+                            }
+
+                            Icon {
+                                anchors.centerIn: parent
+                                name: "close"
+                                size: Theme.dp(16)
+                                color: delHover.hovered ? Theme.fgError : "white"
+                            }
+
+                            HoverHandler {
+                                id: delHover
+
+                                cursorShape: Qt.PointingHandCursor
+                            }
+
+                            TapHandler {
+                                gesturePolicy: TapHandler.ReleaseWithinBounds
+                                onTapped: Prefs.askConfirm("Remove this theme?", "\"" + swatch.themeName + "\" and its generated palette are deleted. The wallpaper folder is left alone.", "Remove", "theme:" + swatch.themeId)
+                            }
+
+                        }
+
+                    }
+
+                }
+
+            }
+
+        }
+
+    }
+
+    SettingCard {
+        title: "MORE ON COLOUR"
+
+        SettingRow {
+            title: "Palettes and applications"
+            description: "How Matugen and Your colour build a palette, which applications follow it, and templates of your own."
+
+            M3Button {
+                text: "Colours"
+                variant: "tonal"
+                onClicked: Prefs.settingsRequested("colours")
+            }
+
+        }
+
+        SettingRow {
+            title: "More themes"
+            description: "A gallery of hundreds of schemes, and importing one from a repo or a file."
+            showDivider: false
+
+            M3Button {
+                text: "Palettes"
+                variant: "tonal"
+                onClicked: Prefs.settingsRequested("palettes")
+            }
+
+        }
+
+    }
+
+    SettingCard {
+        title: "WALLPAPER"
+
+        SettingRow {
+            title: "Wallpaper strip"
+            description: wallpapers.count + " in " + page.wallpaperDir.replace(page.home, "~")
+            stacked: true
+
+            Column {
+                width: parent.width
+                spacing: Theme.dp(14)
+
+                Flow {
+                    width: parent.width
+                    spacing: Theme.dp(10)
+
+                    Repeater {
+                        model: wallpapers
+
+                        Rectangle {
+                            id: tile
+
+                            required property string path
+                            required property string name
+
+                            readonly property bool selected: page.appliedWallpaper === tile.path
+
+                            width: Theme.dp(150)
+                            height: Theme.dp(88)
+                            radius: Theme.radiusSm
+                            color: Theme.bgSunken
+
+                            ClippingRectangle {
+                                anchors.fill: parent
+                                radius: tile.radius
+                                color: "transparent"
+
+                                Image {
+                                    id: thumb
+
+                                    anchors.fill: parent
+                                    source: "file://" + tile.path
+                                    fillMode: Image.PreserveAspectCrop
+                                    asynchronous: true
+                                    cache: true
+                                    sourceSize.width: Theme.dp(300)
+                                    sourceSize.height: Theme.dp(176)
+                                    visible: thumb.status === Image.Ready
+                                }
+
+                            }
+
+                            Rectangle {
+                                anchors.fill: parent
+                                radius: parent.radius
+                                color: "transparent"
+                                border.width: tile.selected ? 3 : (tileArea.containsMouse ? 2 : 0)
+                                border.color: tile.selected ? Theme.accent : Theme.alpha(Theme.text, 0.5)
+
+                                Behavior on border.width {
+                                    NumberAnimation {
+                                        duration: Theme.durQuick
+                                    }
+
+                                }
+
+                            }
+
+                            MouseArea {
+                                id: tileArea
+
+                                anchors.fill: parent
+                                hoverEnabled: true
+                                cursorShape: Qt.PointingHandCursor
+                                onClicked: page.applyWallpaper(tile.path)
+                            }
+
+                            Rectangle {
+                                id: delBtn
+
+                                readonly property bool active: tileArea.containsMouse || delArea.containsMouse
+
+                                width: Theme.dp(28)
+                                height: Theme.dp(28)
+                                radius: Theme.dp(14)
+                                anchors.right: parent.right
+                                anchors.top: parent.top
+                                anchors.margins: Theme.dp(6)
+                                color: delArea.containsMouse ? Theme.error : Theme.alpha(Theme.cShadow, 0.65)
+                                opacity: delBtn.active ? 1 : 0
+                                visible: opacity > 0.01
+                                scale: delBtn.active ? 1 : 0.7
+
+                                Behavior on opacity {
+                                    NumberAnimation {
+                                        duration: Theme.durQuick
+                                    }
+
+                                }
+
+                                Behavior on scale {
+                                    NumberAnimation {
+                                        duration: Theme.durShort
+                                        easing.type: Theme.easeEmphasized
+                                        easing.overshoot: Theme.emphasizedOvershoot
+                                    }
+
+                                }
+
+                                Behavior on color {
+                                    ColorAnimation {
+                                        duration: Theme.durQuick
+                                    }
+
+                                }
+
+                                Icon {
+                                    anchors.centerIn: parent
+                                    name: "delete"
+                                    size: Theme.dp(18)
+                                    fill: delArea.containsMouse ? 1 : 0
+                                    color: delArea.containsMouse ? Theme.fgError : "white"
+                                }
+
+                                MouseArea {
+                                    id: delArea
+
+                                    anchors.fill: parent
+                                    hoverEnabled: true
+                                    cursorShape: Qt.PointingHandCursor
+                                    onClicked: Prefs.askConfirm("Delete this wallpaper?", "\"" + tile.name + "\" is moved to the trash, so it can be restored from there if you change your mind.", "Delete", "wallpaper:" + tile.path)
+                                }
+
+                            }
+
+                        }
+
+                    }
+
+                }
+
+                Text {
+                    text: "No images in this folder yet - add one below."
+                    color: Theme.subtext
+                    font.family: Theme.fontFamily
+                    font.pixelSize: Theme.fontBody
+                    font.variableAxes: Theme.axes(Theme.fontBody, 420, 0)
+                    visible: wallpapers.count === 0
+                }
+
+                Row {
+                    spacing: Theme.dp(10)
+
+                    M3Button {
+                        text: "Add wallpaper..."
+                        variant: "filled"
+                        iconPath: "add"
+                        onClicked: {
+                            wallpaperPicker.command = ["python3", Qt.resolvedUrl("pickfile.py").toString().replace("file://", ""), "--title", "Add wallpaper", "--filter", "Images=image/jpeg,image/png,image/webp"];
+                            wallpaperPicker.running = true;
+                        }
+                    }
+
+                    M3Button {
+                        text: "Open folder"
+                        onClicked: Quickshell.execDetached(["sh", "-c", "xdg-open '" + page.wallpaperDir + "'"])
+                    }
+
+                    M3Button {
+                        text: "Rescan"
+                        variant: "text"
+                        onClicked: wallpaperScan.restart()
+                    }
+
+                }
+
+            }
+
+        }
+
+        SettingRow {
+            title: "Custom folder"
+            description: "Leave empty to follow the current theme's own wallpaper folder."
+            showDivider: false
+
+            M3TextField {
+                width: Theme.dp(260)
+                text: Prefs.wallpaperFolder
+                placeholder: "~/Pictures/wallpapers/" + page.currentTheme
+                onAccepted: (v) => {
+                    return Prefs.wallpaperFolder = v.trim().replace("~", page.home);
+                }
+            }
+
+        }
+
+    }
+
+}

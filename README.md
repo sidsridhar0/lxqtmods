@@ -2,8 +2,9 @@
 
 A small, reproducible setup for a custom dark LXQt desktop on Fedora. It installs
 Spotify and Helium, sets Helium as the default browser, applies a purple-cyan
-Modern-Minimal-Dark theme and wallpaper, puts a thin panel on the bottom edge,
-and adds live display-mode switching for Miriway. Quick Launch pins Helium,
+Modern-Minimal-Dark theme and a screen-filling gradient wallpaper, keeps the
+panel on the left edge, and adds live display-mode switching for Miriway. Quick
+Launch pins Helium,
 Visual Studio Code, Spotify, and a widgets window.
 
 Session extras are kept off the login and compositor critical path: the Fedora
@@ -47,13 +48,12 @@ in after deployment to apply the theme, wallpaper, and panel changes.
 The theme uses a purple-cyan palette, rounded pills, and Noto Sans so desktop
 info can sit on the wallpaper the way a Conky overlay would, without installing
 Conky, Kvantum, extra icon packs, or weather APIs. Main settings live in
-`config/`; the custom Qt/GTK styles and original bokeh wallpaper are under
-`assets/`.
+`config/`; the custom Qt/GTK styles and gradient wallpaper are under `assets/`.
 
-After login, a lightweight overlay is painted onto the desktop (bottom
-layer-shell, no keyboard grab). It shows a greeting, date, CPU/RAM/battery
-rings, and link/uptime status from `/proc` and `/sys` only. Application
-windows cover it. The panel **Desktop widgets** shortcut opens the interactive
+After login, a lightweight overlay starts from autostart and a user systemd
+unit, using `/usr/bin/python3`. It shows a greeting, date, CPU/RAM/battery
+rings, and link/uptime status from `/proc` and `/sys` only. The panel
+**Desktop widgets** shortcut opens the interactive
 volume, power-profile, and todo window; that is not part of the wallpaper
 overlay.
 If PipeWire has not created a default audio sink yet, the interactive window
@@ -62,7 +62,7 @@ The battery action switches between Balanced and Power Saver profiles; the
 deployment script installs and enables `power-profiles-daemon` for this feature.
 Todo items are saved under `~/.local/state/lxqtmods/todos.json`.
 
-The bottom panel groups open windows by application instead of showing a
+The left panel groups open windows by application instead of showing a
 separate task button for every window. Hover over a group to choose one of its
 open windows. Miriway also provides the built-in <kbd>Alt</kbd>+<kbd>Tab</kbd>
 application switcher and <kbd>Alt</kbd>+<kbd>Grave</kbd> window switcher.
@@ -78,7 +78,8 @@ Mouse and touchpad scrolling are configured as reversed (natural) scrolling in
 both axes.
 
 Login uses the distro SDDM greeter. A custom theme is not selected, so a QML
-error cannot block sign-in.
+error cannot block sign-in. The X11 LXQt and Openbox sessions are hidden so
+only the working Wayland LXQt desktop appears at the greeter.
 
 ## Notes
 
@@ -86,6 +87,6 @@ error cannot block sign-in.
 - Spotify is installed per-user as the Flathub Flatpak `com.spotify.Client`.
 - Existing LXQt and PCManFM settings are backed up before deployment.
 - Helium, Visual Studio Code, Spotify, and Desktop widgets are pinned in the
-  bottom Quick Launch.
+  left Quick Launch.
 - `~/.config/miriway-shell.display-config-layout` stores the active F7 profile.
 - Run `./deploy.sh` again to reapply settings and update Helium.

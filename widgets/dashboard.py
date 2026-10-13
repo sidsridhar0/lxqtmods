@@ -240,28 +240,26 @@ class Dashboard(Gtk.ApplicationWindow):
             if GtkLayerShell is not None and GtkLayerShell.is_supported():
                 GtkLayerShell.init_for_window(self)
                 GtkLayerShell.set_namespace(self, "lxqtmods-desktop-widgets")
-                GtkLayerShell.set_layer(self, GtkLayerShell.Layer.BOTTOM)
+                GtkLayerShell.set_layer(self, GtkLayerShell.Layer.TOP)
                 GtkLayerShell.set_anchor(self, GtkLayerShell.Edge.TOP, True)
                 GtkLayerShell.set_anchor(self, GtkLayerShell.Edge.LEFT, True)
-                GtkLayerShell.set_margin(self, GtkLayerShell.Edge.TOP, 28)
-                GtkLayerShell.set_margin(self, GtkLayerShell.Edge.LEFT, 28)
+                GtkLayerShell.set_margin(self, GtkLayerShell.Edge.TOP, 20)
+                GtkLayerShell.set_margin(self, GtkLayerShell.Edge.LEFT, 72)
                 GtkLayerShell.set_exclusive_zone(self, 0)
                 keyboard_mode = getattr(GtkLayerShell, "KeyboardMode", None)
                 if keyboard_mode is not None:
-                    none_mode = getattr(keyboard_mode, "NONE", None)
-                    if none_mode is not None:
-                        GtkLayerShell.set_keyboard_mode(self, none_mode)
+                    GtkLayerShell.set_keyboard_mode(self, keyboard_mode.ON_DEMAND)
                 return
         except (GLib.Error, AttributeError, RuntimeError) as error:
             print(f"GTK layer-shell setup failed: {error}", file=sys.stderr)
 
-        self.set_keep_below(True)
+        self.set_keep_above(True)
         self.set_type_hint(Gdk.WindowTypeHint.UTILITY)
         self.set_position(Gtk.WindowPosition.NONE)
-        self.move(28, 28)
+        self.move(72, 20)
         print(
-            "GTK layer-shell is unavailable; the desktop overlay will sit below windows "
-            "as a regular utility surface.",
+            "GTK layer-shell is unavailable; the desktop overlay will use a regular "
+            "utility window until gtk-layer-shell is installed.",
             file=sys.stderr,
         )
 
@@ -272,11 +270,9 @@ class Dashboard(Gtk.ApplicationWindow):
             color: #f4eefc;
         }
         window#lxqtmods-dashboard.overlay {
-            background: transparent;
+            background: rgba(22, 18, 42, 0.72);
             color: #f4eefc;
-        }
-        window#lxqtmods-dashboard.overlay > * {
-            background: transparent;
+            border-radius: 22px;
         }
         .hello {
             color: #f4eefc;
@@ -288,7 +284,7 @@ class Dashboard(Gtk.ApplicationWindow):
             font-weight: bold;
         }
         .pill {
-            background: rgba(22, 18, 42, 0.42);
+            background: rgba(44, 36, 88, 0.55);
             border-radius: 22px;
             padding: 12px 16px;
         }

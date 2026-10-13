@@ -115,9 +115,11 @@ Icon=utilities-system-monitor
 Terminal=false
 Categories=System;
 StartupWMClass=lxqtmods-dashboard
-OnlyShowIn=LXQt;
+X-GNOME-Autostart-enabled=true
 EOF
 install -m 644 "$dashboard_desktop" "$CONFIG_DIR/autostart/lxqtmods-dashboard.desktop"
+install -D -m 644 "$ROOT/systemd/user/lxqtmods-dashboard.service" \
+    "$CONFIG_DIR/systemd/user/lxqtmods-dashboard.service"
 
 display_config="$CONFIG_DIR/miriway-shell.display-config"
 backup_once "$display_config"
@@ -276,6 +278,21 @@ else
     warn "flatpak is not installed; skipping Spotify."
 fi
 
+hide_login_session() {
+    local file="$1"
+    if ! sudo test -f "$file"; then
+        return 0
+    fi
+    if ! sudo test -e "$file.lxqtmods.bak"; then
+        sudo cp -a -- "$file" "$file.lxqtmods.bak"
+    fi
+    if sudo grep -qx 'Hidden=true' "$file"; then
+        return 0
+    fi
+    sudo sed -i '/^Hidden=/d' "$file"
+    printf '\nHidden=true\n' | sudo tee -a "$file" >/dev/null
+}
+
 restore_sddm_default() {
     local sddm_theme_dir=/usr/share/sddm/themes/Modern-Minimal
     local sddm_dropin=/etc/sddm.conf.d/90-lxqtmods.conf
@@ -304,6 +321,13 @@ if command -v sudo >/dev/null 2>&1 && [[ -t 0 ]]; then
             || warn "Could not add $DEPLOY_USER to the input group."
     fi
     restore_sddm_default || warn "Could not restore the distro SDDM greeter."
+    hide_login_session /usr/share/xsessions/lxqt.desktop \
+        || warn "Could not hide the X11 LXQt session."
+    hide_login_session /usr/share/wayland-sessions/openbox.desktop \
+        || warn "Could not hide the Openbox Wayland session."
+    for session in /usr/share/xsessions/openbox.desktop /usr/share/xsessions/openbox-*.desktop; do
+        hide_login_session "$session" || warn "Could not hide $session."
+    done
 else
     warn "System setup was skipped: run deploy.sh from a terminal with sudo access to install"
     warn "python3-gobject, python3-cairo, Power Profiles, layer-shell, and touchpad packages."
@@ -314,8 +338,11 @@ systemctl --user disable --now lxqtmods-gestures.service >/dev/null 2>&1 || true
 systemctl --user daemon-reload || warn "Could not reload user systemd units."
 systemctl --user enable lxqtmods-gestures.service \
     || warn "Could not enable the gesture service."
+systemctl --user enable lxqtmods-dashboard.service \
+    || warn "Could not enable the desktop overlay."
 if systemctl --user is-active --quiet graphical-session.target; then
     systemctl --user start lxqtmods-gestures.service || warn "Gesture service will start at the next login."
+    systemctl --user start lxqtmods-dashboard.service || warn "Desktop overlay will start at the next login."
 fi
 
 printf '\nSetup installed. Log out and back in to apply panel settings and start the desktop widget.\n'

@@ -1,6 +1,6 @@
 LXQtPanel #BackgroundWidget {
     background: rgba(18, 16, 28, 94%);
-    border-top: 2px solid #090814;
+    border-right: 3px solid #090814;
 }
 
 QToolTip {

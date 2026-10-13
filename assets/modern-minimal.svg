@@ -1,36 +1,10 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 3440 1440">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1 1" preserveAspectRatio="none">
   <defs>
     <linearGradient id="sky" x1="0" y1="0" x2="1" y2="1">
       <stop stop-color="#2a3ad4"/>
-      <stop offset=".42" stop-color="#5b3db8"/>
+      <stop offset=".45" stop-color="#5b3db8"/>
       <stop offset="1" stop-color="#2b8fd4"/>
     </linearGradient>
-    <radialGradient id="glow" cx=".72" cy=".46" r=".58">
-      <stop stop-color="#f09ad8" stop-opacity=".42"/>
-      <stop offset="1" stop-color="#2a3ad4" stop-opacity="0"/>
-    </radialGradient>
   </defs>
-  <rect width="3440" height="1440" fill="url(#sky)"/>
-  <rect width="3440" height="1440" fill="url(#glow)"/>
-  <circle cx="420" cy="210" r="18" fill="#8ad4ea" opacity=".35"/>
-  <circle cx="760" cy="120" r="10" fill="#f4eefc" opacity=".28"/>
-  <circle cx="980" cy="340" r="26" fill="#c9b3ff" opacity=".26"/>
-  <circle cx="240" cy="520" r="14" fill="#8ad4ea" opacity=".3"/>
-  <circle cx="640" cy="680" r="8" fill="#f4eefc" opacity=".22"/>
-  <circle cx="1180" cy="180" r="22" fill="#f09ad8" opacity=".24"/>
-  <circle cx="1480" cy="460" r="16" fill="#8ad4ea" opacity=".22"/>
-  <circle cx="1720" cy="140" r="12" fill="#f4eefc" opacity=".2"/>
-  <circle cx="1960" cy="300" r="34" fill="#c9b3ff" opacity=".2"/>
-  <circle cx="2280" cy="90" r="14" fill="#8ad4ea" opacity=".28"/>
-  <circle cx="2520" cy="420" r="20" fill="#f09ad8" opacity=".22"/>
-  <circle cx="2860" cy="160" r="28" fill="#8ad4ea" opacity=".2"/>
-  <circle cx="3180" cy="360" r="12" fill="#f4eefc" opacity=".26"/>
-  <circle cx="3060" cy="620" r="18" fill="#c9b3ff" opacity=".18"/>
-  <circle cx="1320" cy="820" r="40" fill="#5b3db8" opacity=".18"/>
-  <circle cx="2680" cy="880" r="54" fill="#2b8fd4" opacity=".16"/>
-  <circle cx="880" cy="1040" r="24" fill="#8ad4ea" opacity=".16"/>
-  <circle cx="2140" cy="1100" r="16" fill="#f09ad8" opacity=".16"/>
-  <circle cx="400" cy="1160" r="10" fill="#f4eefc" opacity=".2"/>
-  <circle cx="1640" cy="1240" r="22" fill="#c9b3ff" opacity=".14"/>
-  <circle cx="3000" cy="1180" r="30" fill="#8ad4ea" opacity=".14"/>
+  <rect width="1" height="1" fill="url(#sky)"/>
 </svg>

@@ -13,6 +13,11 @@ for command in curl flatpak gio python3; do
     fi
 done
 
+python3 -c 'import gi; gi.require_version("Gtk", "3.0"); from gi.repository import Gtk' || {
+    printf 'GTK 3 Python bindings are required (python3-gobject).\n' >&2
+    exit 1
+}
+
 backup_once() {
     local file="$1"
     if [[ -f "$file" && ! -e "$file.lxqtmods.bak" ]]; then
@@ -71,6 +76,20 @@ install -D -m 644 "$ROOT/assets/Modern-Minimal-Dark/index.theme" \
 install -D -m 644 "$ROOT/assets/Modern-Minimal-Dark/gtk-3.0/gtk.css" \
     "$DATA_DIR/themes/Modern-Minimal-Dark/gtk-3.0/gtk.css"
 install -D -m 755 "$ROOT/display-mode.sh" "$HOME/.local/bin/lxqtmods-display-mode"
+install -D -m 755 "$ROOT/widgets/dashboard.py" "$DATA_DIR/lxqtmods/dashboard.py"
+install -d "$DATA_DIR/applications"
+cat > "$DATA_DIR/applications/lxqtmods-dashboard.desktop" <<EOF
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Desktop widgets
+Comment=System meters, volume, battery profile, and todo list
+Exec=python3 "$DATA_DIR/lxqtmods/dashboard.py"
+Icon=utilities-system-monitor
+Terminal=false
+Categories=System;
+StartupWMClass=lxqtmods-dashboard
+EOF
 
 display_config="$CONFIG_DIR/miriway-shell.display-config"
 backup_once "$display_config"
@@ -156,5 +175,29 @@ flatpak remote-add --user --if-not-exists flathub \
     https://dl.flathub.org/repo/flathub.flatpakrepo
 flatpak install --user --noninteractive --assumeyes flathub com.spotify.Client
 
+if command -v sudo >/dev/null 2>&1 && [[ -t 0 ]]; then
+    sudo dnf install -y power-profiles-daemon
+    sudo systemctl enable --now power-profiles-daemon.service
+    sddm_theme_dir=/usr/share/sddm/themes/Modern-Minimal
+    sddm_dropin=/etc/sddm.conf.d/90-lxqtmods.conf
+    if sudo test -d "$sddm_theme_dir" && ! sudo test -e "$sddm_theme_dir.lxqtmods.bak"; then
+        sudo cp -a -- "$sddm_theme_dir" "$sddm_theme_dir.lxqtmods.bak"
+    fi
+    if sudo test -f "$sddm_dropin" && ! sudo test -e "$sddm_dropin.lxqtmods.bak"; then
+        sudo cp -a -- "$sddm_dropin" "$sddm_dropin.lxqtmods.bak"
+    fi
+    sudo install -d "$sddm_theme_dir"
+    sudo install -m 644 "$ROOT/assets/sddm/Modern-Minimal/Main.qml" \
+        "$sddm_theme_dir/Main.qml"
+    sudo install -m 644 "$ROOT/assets/sddm/Modern-Minimal/theme.conf" \
+        "$sddm_theme_dir/theme.conf"
+    sudo install -D -m 644 "$ROOT/config/sddm.conf" \
+        "$sddm_dropin"
+else
+    printf '\nSystem setup was skipped: run deploy.sh from a terminal with sudo access to install\n' >&2
+    printf 'the Power Saver profile service and apply the custom SDDM login theme.\n' >&2
+fi
+
 printf '\nSetup installed. Log out and back in to apply the theme and panel changes.\n'
 printf 'Press F7 to cycle display modes; the extended layout is active by default.\n'
+printf 'Open Desktop widgets from the left sidebar for CPU/RAM, volume, battery, and todos.\n'

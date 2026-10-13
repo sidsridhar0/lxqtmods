@@ -282,4 +282,5 @@ printf '\nSetup installed. Log out and back in to show the desktop widget, apply
 printf 'and activate three-finger gestures. Gesture support reads input events from all devices;\n'
 printf 'the account must be in the input group, and that access takes effect after logging back in.\n'
 printf 'Press F7 to cycle display modes; the extended layout is active by default.\n'
-printf 'Open Desktop widgets from the left sidebar for CPU/RAM, volume, battery, and todos.\n'
+printf 'The interactive CPU/RAM, volume, battery, and todo dashboard runs on the desktop.\n'
+printf 'The left-sidebar Desktop widgets shortcut can show it again if it is closed.\n'

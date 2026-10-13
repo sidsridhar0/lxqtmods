@@ -48,8 +48,10 @@ If PipeWire has not created a default audio sink yet at login, the dashboard
 still opens and retries volume synchronization.
 The battery action switches between Balanced and Power Saver profiles; the
 deployment script installs and enables `power-profiles-daemon` for this feature.
-Todo items are saved under `~/.local/state/lxqtmods/todos.json`. **Desktop
-widgets** on the left panel reopens the dashboard if it is closed.
+Todo items are saved under `~/.local/state/lxqtmods/todos.json`. This is a
+persistent, interactive desktop widget—not a sidebar app that must be opened.
+The left-panel **Desktop widgets** shortcut is only a fallback to show it again
+if it is closed.
 
 The left panel groups open windows by application instead of showing a
 separate task button for every window. Hover over a group to choose one of its

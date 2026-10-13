@@ -2,6 +2,17 @@
 set -euo pipefail
 
 ROOT="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+if [[ "$EUID" -eq 0 ]]; then
+    if [[ -n "${SUDO_USER:-}" && "$SUDO_USER" != root ]]; then
+        deploy_home="$(getent passwd "$SUDO_USER" | cut -d: -f6)"
+        exec sudo -u "$SUDO_USER" -- env -u SUDO_USER HOME="$deploy_home" \
+            "$ROOT/deploy.sh" "$@"
+    fi
+    printf 'Do not run deploy.sh as root; run ./deploy.sh from your user account.\n' >&2
+    exit 1
+fi
+
+DEPLOY_USER="$(id -un)"
 APP_DIR="$HOME/Applications"
 DATA_DIR="$HOME/.local/share"
 CONFIG_DIR="$HOME/.config"
@@ -229,11 +240,9 @@ flatpak install --user --noninteractive --assumeyes flathub com.spotify.Client
 if command -v sudo >/dev/null 2>&1 && [[ -t 0 ]]; then
     sudo dnf install -y gtk-layer-shell power-profiles-daemon wtype
     sudo systemctl enable --now power-profiles-daemon.service
-    if ! id -nG "$USER" | tr ' ' '\n' | grep -Fxq input; then
-        sudo usermod --append --groups input "$USER"
+    if ! getent group input | cut -d: -f4 | tr ',' '\n' | grep -Fxq "$DEPLOY_USER"; then
+        sudo usermod --append --groups input "$DEPLOY_USER"
     fi
-    systemctl --user daemon-reload
-    systemctl --user enable lxqtmods-gestures.service
     sddm_theme_dir=/usr/share/sddm/themes/Modern-Minimal
     sddm_dropin=/etc/sddm.conf.d/90-lxqtmods.conf
     if sudo test -d "$sddm_theme_dir" && ! sudo test -e "$sddm_theme_dir.lxqtmods.bak"; then
@@ -254,6 +263,9 @@ else
     printf 'the Power Profiles and layer-shell packages, enable touchpad gestures, and apply\n' >&2
     printf 'the custom SDDM login theme.\n' >&2
 fi
+
+systemctl --user daemon-reload
+systemctl --user enable lxqtmods-gestures.service
 
 printf '\nSetup installed. Log out and back in to show the desktop widget, apply panel settings,\n'
 printf 'and activate three-finger gestures. Gesture support reads input events from all devices;\n'

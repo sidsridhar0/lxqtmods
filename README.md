@@ -22,9 +22,10 @@ settings in your home directory and does not require root access.
 Press **F7** to cycle from extended screens to laptop-only, external-only,
 duplicated, then extended screens again. Miriway applies each mode live and
 shows a notification. The saved display profile matches the setup this was
-created on: `eDP-1` at 1920x1080 and `DisplayPort-1` (the kernel's `DP-1`
-connector) at 3440x1440. If your connector names or resolutions differ, edit
-`config/miriway-shell.display-config` before deploying.
+created on: `eDP-1` at 1920x1080 and an external DisplayPort monitor at
+3440x1440. The profiles accept either `DisplayPort-1` or `DisplayPort-2`
+(kernel `DP-1`/`DP-2`) for the external display. If your connector names or
+resolutions differ, edit `config/miriway-shell.display-config` before deploying.
 
 ## Applying changes
 

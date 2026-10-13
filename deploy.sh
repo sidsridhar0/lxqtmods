@@ -278,21 +278,6 @@ else
     warn "flatpak is not installed; skipping Spotify."
 fi
 
-hide_login_session() {
-    local file="$1"
-    if ! sudo test -f "$file"; then
-        return 0
-    fi
-    if ! sudo test -e "$file.lxqtmods.bak"; then
-        sudo cp -a -- "$file" "$file.lxqtmods.bak"
-    fi
-    if sudo grep -qx 'Hidden=true' "$file"; then
-        return 0
-    fi
-    sudo sed -i '/^Hidden=/d' "$file"
-    printf '\nHidden=true\n' | sudo tee -a "$file" >/dev/null
-}
-
 restore_login_session() {
     local file="$1"
     if sudo test -e "$file.lxqtmods.bak"; then
@@ -334,12 +319,14 @@ if command -v sudo >/dev/null 2>&1 && [[ -t 0 ]]; then
     restore_sddm_default || warn "Could not restore the distro SDDM greeter."
     restore_login_session /usr/share/xsessions/lxqt.desktop \
         || warn "Could not restore the LXQt Desktop session."
-    for session in /usr/share/wayland-sessions/*.desktop; do
-        hide_login_session "$session" || warn "Could not hide $session."
-    done
-    for session in /usr/share/xsessions/openbox.desktop /usr/share/xsessions/openbox-*.desktop; do
-        hide_login_session "$session" || warn "Could not hide $session."
-    done
+    sudo find /usr/share/wayland-sessions -maxdepth 1 \( -name '*.desktop' -o -name '*.desktop.lxqtmods.bak' \) \
+        -exec rm -f {} + \
+        || warn "Could not remove Wayland sessions."
+    sudo find /usr/share/xsessions -maxdepth 1 \( \
+            -name 'openbox.desktop' -o -name 'openbox-*.desktop' \
+            -o -name 'openbox.desktop.lxqtmods.bak' -o -name 'openbox-*.desktop.lxqtmods.bak' \
+        \) -exec rm -f {} + \
+        || warn "Could not remove Openbox sessions."
 else
     warn "System setup was skipped: run deploy.sh from a terminal with sudo access to install"
     warn "python3-gobject, python3-cairo, Power Profiles, layer-shell, and touchpad packages."

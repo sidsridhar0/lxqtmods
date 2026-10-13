@@ -37,10 +37,11 @@ warn() {
     printf '%s\n' "$*" >&2
 }
 
-python3 -c 'import gi; gi.require_version("Gtk", "3.0"); from gi.repository import Gtk' || {
-    printf 'GTK 3 Python bindings are required (python3-gobject).\n' >&2
-    exit 1
-}
+if [[ -x /usr/bin/python3 ]]; then
+    SYSTEM_PYTHON=/usr/bin/python3
+else
+    SYSTEM_PYTHON="$(command -v python3)"
+fi
 
 backup_once() {
     local file="$1"
@@ -109,7 +110,7 @@ Version=1.0
 Type=Application
 Name=Desktop widgets
 Comment=Desktop stats overlay, volume, battery profile, and todo list
-Exec=python3 "$DATA_DIR/lxqtmods/dashboard.py" --desktop
+Exec=$SYSTEM_PYTHON "$DATA_DIR/lxqtmods/dashboard.py" --desktop
 Icon=utilities-system-monitor
 Terminal=false
 Categories=System;
@@ -293,7 +294,8 @@ restore_sddm_default() {
 }
 
 if command -v sudo >/dev/null 2>&1 && [[ -t 0 ]]; then
-    sudo dnf install -y gtk-layer-shell power-profiles-daemon wtype \
+    sudo dnf install -y python3-gobject python3-cairo gtk3 gtk-layer-shell \
+        power-profiles-daemon wtype \
         || warn "Optional package install failed; continuing with session settings."
     sudo systemctl enable --now power-profiles-daemon.service \
         || warn "Could not enable power-profiles-daemon."
@@ -304,7 +306,7 @@ if command -v sudo >/dev/null 2>&1 && [[ -t 0 ]]; then
     restore_sddm_default || warn "Could not restore the distro SDDM greeter."
 else
     warn "System setup was skipped: run deploy.sh from a terminal with sudo access to install"
-    warn "Power Profiles, layer-shell, and touchpad gesture packages."
+    warn "python3-gobject, python3-cairo, Power Profiles, layer-shell, and touchpad packages."
     warn "If graphical login is broken, remove /etc/sddm.conf.d/90-lxqtmods.conf from a TTY."
 fi
 

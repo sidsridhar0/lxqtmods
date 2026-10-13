@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/python3
 
 import datetime
 import json
@@ -11,11 +11,19 @@ import sys
 import tempfile
 from pathlib import Path
 
-import gi
+try:
+    import gi
 
-gi.require_version("Gdk", "3.0")
-gi.require_version("Gtk", "3.0")
-from gi.repository import Gdk, Gio, GLib, Gtk
+    gi.require_version("Gdk", "3.0")
+    gi.require_version("Gtk", "3.0")
+    from gi.repository import Gdk, Gio, GLib, Gtk
+except (ImportError, ValueError):
+    sys.stderr.write(
+        "Desktop widgets need Fedora's system GTK 3 Python bindings.\n"
+        "Install them with: sudo dnf install -y python3-gobject python3-cairo\n"
+        "Then run this with /usr/bin/python3, not a virtualenv Python.\n"
+    )
+    raise SystemExit(1)
 
 try:
     gi.require_version("GtkLayerShell", "0.1")

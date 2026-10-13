@@ -24,8 +24,9 @@ The script installs Spotify from Flathub and downloads the current stable
 x86_64 Helium AppImage from Helium's official release metadata. Those app
 installs are optional: a download failure does not roll back desktop settings.
 User settings are installed in your home directory. Run it from a terminal with
-sudo access to install GTK layer-shell, wtype, and Power Profiles, and to
-enable touchpad gesture input.
+sudo access to install `python3-gobject`, GTK layer-shell, wtype, and Power
+Profiles, and to enable touchpad gesture input. The overlay is started with
+`/usr/bin/python3` so a virtualenv without `gi` is not used.
 
 If an earlier deploy selected the custom login theme and graphical login fails,
 run `./deploy.sh` from a TTY with sudo access, or delete

@@ -17,7 +17,7 @@ hl.config({
         kb_options = "grp:alt_shift_toggle",
         kb_rules   = "",
 
-        follow_mouse = 1,
+        follow_mouse = 2,
         sensitivity  = 0.3,
 
         touchpad = {

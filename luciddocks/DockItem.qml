@@ -371,6 +371,10 @@ Item {
             dockItem.launch(false);
             return;
         }
+        if (addresses.length > 1) {
+            dockItem.requestStackPopup();
+            return;
+        }
 
         var address = addresses.indexOf(dockItem.focusedAddress) >= 0 ? dockItem.focusedAddress : addresses[0];
         Hyprland.dispatch("hl.dsp.focus({window='address:" + address + "'})");

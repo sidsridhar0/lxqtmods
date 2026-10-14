@@ -46,3 +46,45 @@ if hl.plugin.dynamic_cursors then
   hl.plugin.dynamic_cursors.shape_rule { shape = "text", mode = "none" }
   hl.plugin.dynamic_cursors.shape_rule { shape = "grab", mode = "stretch", stretch = { limit = 2000 } }
 end
+
+if hl.plugin.hyprbars then
+  hl.config({
+    plugin = {
+      hyprbars = {
+        enabled = true,
+        bar_height = 34,
+        bar_color = "rgb(292b33)",
+        col = { text = "rgb(f2f2f5)" },
+        bar_text_size = 12,
+        bar_text_weight = "medium",
+        bar_text_font = "Google Sans",
+        bar_text_align = "left",
+        bar_part_of_window = true,
+        bar_padding = 12,
+        bar_button_padding = 6,
+      },
+    },
+  })
+
+  hl.plugin.hyprbars.add_button({
+    bg_color = "rgb(e35b69)",
+    fg_color = "rgb(ffffff)",
+    size = 18,
+    icon = "×",
+    action = [[hyprctl dispatch 'hl.dsp.window.close()']],
+  })
+  hl.plugin.hyprbars.add_button({
+    bg_color = "rgb(6578c8)",
+    fg_color = "rgb(ffffff)",
+    size = 18,
+    icon = "□",
+    action = [[hyprctl dispatch 'hl.dsp.window.fullscreen({ mode = "maximized", action = "toggle" })']],
+  })
+  hl.plugin.hyprbars.add_button({
+    bg_color = "rgb(646b78)",
+    fg_color = "rgb(ffffff)",
+    size = 18,
+    icon = "−",
+    action = [[hyprctl eval 'LucidSpecials.minimize()']],
+  })
+end

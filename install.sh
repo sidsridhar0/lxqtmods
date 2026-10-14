@@ -59,7 +59,7 @@ ${b}Lucid $VERSION installer${r}
                  ~/Pictures/wallpapers
   --with-hypr    reinstall Lucid's Hyprland config even when one
                  is already in place
-  --no-plugins   don't build the tilting-cursor Hyprland plugin
+    --no-plugins   don't build optional Hyprland plugins
                  (hypr-dynamic-cursors)
   --skip-deps    don't install packages, only check for them
   -y, --yes      don't prompt, accept every default
@@ -581,6 +581,47 @@ HYPR_LUA_INSTALLED=0
 # refused with "version mismatch" until it is forced. none of this is fatal:
 # a failed build leaves a cursor that simply does not tilt
 CURSOR_PLUGIN="$HYPR_DIR/scripts/cursor-plugin.sh"
+TITLEBAR_PLUGIN="$HYPR_DIR/scripts/hyprbars-plugin.sh"
+
+setup_titlebar_plugin() {
+    local so="${XDG_DATA_HOME:-$HOME/.local/share}/lucid/plugins/hyprbars.so"
+    local in_hypr=0
+    [[ -n "${HYPRLAND_INSTANCE_SIGNATURE:-}" ]] && in_hypr=1
+
+    if [[ -f "$so" ]]; then
+        if [[ $in_hypr -eq 1 ]]; then
+            if "$TITLEBAR_PLUGIN" ensure; then
+                say "  window titlebar buttons up to date and loaded"
+            else
+                warn "  titlebar plugin did not load — see: $TITLEBAR_PLUGIN status"
+            fi
+        else
+            say "  ${dim}titlebar plugin already built; it is loaded on login${r}"
+        fi
+        return 0
+    fi
+
+    say "  hyprbars adds minimize, maximize and close buttons to every window"
+    ask "  Build it now against your Hyprland headers?" || {
+        say "  ${dim}skipped — later: $TITLEBAR_PLUGIN build && $TITLEBAR_PLUGIN load${r}"
+        return 0
+    }
+
+    "$TITLEBAR_PLUGIN" build || {
+        warn "  titlebar plugin did not build — everything else is unaffected"
+        return 0
+    }
+    if [[ $in_hypr -eq 1 ]]; then
+        if "$TITLEBAR_PLUGIN" load; then
+            say "  titlebar buttons loaded; modules/autostart.lua loads them on login"
+        else
+            warn "  titlebar plugin built but did not load — see: $TITLEBAR_PLUGIN status"
+        fi
+    else
+        say "  titlebar plugin built; modules/autostart.lua loads it on login"
+    fi
+}
+
 setup_cursor_plugin() {
     local so="${XDG_DATA_HOME:-$HOME/.local/share}/lucid/plugins/dynamic-cursors.so"
     local in_hypr=0
@@ -696,6 +737,7 @@ if [[ $WITH_HYPR -eq 1 ]]; then
         cp "$SRC/support/hypr/modules/"*.lua "$HYPR_DIR/modules/"
         install -m755 "$SRC/support/hypr/scripts/reload.sh" "$HYPR_DIR/scripts/reload.sh"
         install -m755 "$SRC/support/hypr/scripts/cursor-plugin.sh" "$HYPR_DIR/scripts/cursor-plugin.sh"
+        install -m755 "$SRC/support/hypr/scripts/hyprbars-plugin.sh" "$HYPR_DIR/scripts/hyprbars-plugin.sh"
         # a hyprland.conf left beside hyprland.lua is ambiguous - Hyprland
         # reads one of them and you cannot tell which, so the install looks
         # like it did nothing. the full directory is already backed up above
@@ -760,8 +802,9 @@ if [[ $WITH_HYPR -eq 1 ]]; then
         # block only applies while its plugin is loaded, so without one it is inert
         if [[ $WITH_PLUGINS -eq 1 ]]; then
             setup_cursor_plugin
+            setup_titlebar_plugin
         else
-            say "  ${dim}cursor plugin skipped (--no-plugins)${r}"
+            say "  ${dim}optional Hyprland plugins skipped (--no-plugins)${r}"
         fi
 
         # the binds shell out to these, so a missing one is a dead key rather

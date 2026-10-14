@@ -171,6 +171,68 @@ function M.stash()
     end
 end
 
+local minimizedPrefix = "lucid_minimized_"
+
+local function isMinimizedTag(tag)
+    return type(tag) == "string" and tag:match("^" .. minimizedPrefix) ~= nil
+end
+
+function M.minimize()
+    local w = hl.get_active_window()
+    if not w or not w.workspace or w.workspace.name == "special:minimized" then return end
+
+    local workspace = w.workspace
+    local marker
+    if workspace.special then
+        marker = minimizedPrefix .. "special_" .. tostring(workspace.name):gsub("^special:", "")
+    else
+        marker = minimizedPrefix .. "workspace_" .. tostring(workspace.id)
+    end
+
+    local otherTags = {}
+    for _, tag in pairs(w.tags or {}) do
+        if not isMinimizedTag(tag) then otherTags[#otherTags + 1] = tag end
+    end
+    hl.dispatch(hl.dsp.window.clear_tags({ window = w }))
+    for _, tag in ipairs(otherTags) do
+        hl.dispatch(hl.dsp.window.tag({ tag = tag, window = w }))
+    end
+    hl.dispatch(hl.dsp.window.tag({ tag = marker, window = w }))
+    hl.dispatch(hl.dsp.window.move({ window = w, workspace = "special:minimized", follow = false }))
+end
+
+function M.restore(address)
+    local w
+    for _, candidate in ipairs(hl.get_windows() or {}) do
+        if tostring(candidate.address) == tostring(address) then
+            w = candidate
+            break
+        end
+    end
+    if not w then return end
+
+    local target
+    local otherTags = {}
+    for _, tag in pairs(w.tags or {}) do
+        local workspaceId = type(tag) == "string" and tag:match("^lucid_minimized_workspace_(%d+)$")
+        local specialName = type(tag) == "string" and tag:match("^lucid_minimized_special_([%w_%-]+)$")
+        if workspaceId then
+            target = tonumber(workspaceId)
+        elseif specialName then
+            target = "special:" .. specialName
+        elseif not isMinimizedTag(tag) then
+            otherTags[#otherTags + 1] = tag
+        end
+    end
+    if not target then return end
+
+    hl.dispatch(hl.dsp.window.clear_tags({ window = w }))
+    for _, tag in ipairs(otherTags) do
+        hl.dispatch(hl.dsp.window.tag({ tag = tag, window = w }))
+    end
+    hl.dispatch(hl.dsp.window.move({ window = w, workspace = target, follow = true }))
+end
+
 -- a workspace deleted in settings hands its windows to the one you are on
 function M.release(name)
     local target = "special:" .. name

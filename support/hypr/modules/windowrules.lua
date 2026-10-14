@@ -63,3 +63,10 @@ hl.window_rule({
     float  = true,
     center = true,
 })
+
+hl.window_rule({
+    name  = "float-windows-by-default",
+    match = { class = ".*" },
+
+    float = true,
+})

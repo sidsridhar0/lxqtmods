@@ -799,6 +799,11 @@ Item {
 
     // focusing a stashed window is what opens its scratchpad
     function openStashed(index, app) {
+        const workspace = root.wsAt(index);
+        if (workspace && workspace.name === "special:minimized") {
+            Quickshell.execDetached(["hyprctl", "eval", "LucidSpecials.restore(" + root.luaStr(app.address) + ")"]);
+            return;
+        }
         if (index === root.shownSpecialSlot && app.focused)
             root.hideSpecial();
         else

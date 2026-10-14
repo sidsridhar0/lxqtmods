@@ -12,6 +12,8 @@
    -- it again by itself when Hyprland has changed since
    local cursor = os.getenv("HOME") .. "/.config/hypr/scripts/cursor-plugin.sh"
    hl.exec_cmd("test -x '" .. cursor .. "' && exec '" .. cursor .. "' ensure")
+  local bars = os.getenv("HOME") .. "/.config/hypr/scripts/hyprbars-plugin.sh"
+  hl.exec_cmd("test -x '" .. bars .. "' && exec '" .. bars .. "' ensure")
    -- launch-shell.sh picks the Qt scene graph backend before starting the
    -- shell: the proprietary nvidia driver needs Vulkan to get animations off
    -- the 60fps basic render loop. plain quickshell if it is not installed yet.

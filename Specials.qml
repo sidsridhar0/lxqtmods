@@ -528,6 +528,8 @@ Singleton {
     // special:music -> Music
     function label(name) {
         const bare = String(name).indexOf("special:") === 0 ? String(name).slice(8) : String(name);
+        if (bare === "minimized")
+            return "Minimized";
         const s = root.space(bare);
         return s ? s.label : (bare === "" ? "special" : bare);
     }
@@ -535,6 +537,8 @@ Singleton {
     // special:music -> the workspace's own mark
     function glyph(name) {
         const bare = String(name).indexOf("special:") === 0 ? String(name).slice(8) : String(name);
+        if (bare === "minimized")
+            return "minimize";
         const s = root.space(bare);
         return s && s.glyph ? s.glyph : "apps";
     }

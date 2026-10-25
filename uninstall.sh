@@ -23,6 +23,20 @@ ask() {
 # stop only the instance running this config, never someone else's shell
 qs kill -p "$SHELL_DIR" 2>/dev/null || true
 
+DNS_STATE="${XDG_STATE_HOME:-$HOME/.local/state}/lucid/dns-blocker.json"
+DNS_HELPER="$SHELL_DIR/lucidprefs/dnsblocker.py"
+if [[ -f "$DNS_STATE" ]]; then
+    if [[ -f "$DNS_HELPER" ]] && ask "Turn off Lucid DNS filtering and restore the saved connection DNS settings?"; then
+        if python3 "$DNS_HELPER" disable; then
+            echo "  DNS filtering turned off and previous settings restored"
+        else
+            echo "  DNS filtering could not be fully restored; its backup remains at $DNS_STATE" >&2
+        fi
+    else
+        echo "  DNS filtering remains enabled; its backup remains at $DNS_STATE"
+    fi
+fi
+
 if [[ -d "$SHELL_DIR" ]]; then
     if ask "Move $SHELL_DIR to $SHELL_DIR.removed-$STAMP?"; then
         mv "$SHELL_DIR" "$SHELL_DIR.removed-$STAMP"

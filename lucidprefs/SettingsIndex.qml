@@ -30,7 +30,7 @@ Item {
         "keybinds": "shortcuts hotkeys keys keyboard",
         "displays": "monitor monitors screen resolution refresh scale hdmi",
         "sound": "audio volume speakers headphones microphone system sounds chime beep usb charger camera",
-        "network": "internet ethernet wired wireless",
+        "network": "internet ethernet wired wireless dns blocker parental adult pornography porn youtube family filter content safety",
         "bluetooth": "pair headphones airpods",
         "kdeconnect": "kde connect android",
         "notifications": "dnd popups toast usb camera",

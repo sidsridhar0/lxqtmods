@@ -368,6 +368,10 @@ FloatingWindow {
                 Net.forget(action.substring(11));
             else if (action.indexOf("net-hotspot:") === 0)
                 Net.hotspotFromToken(action.substring(12));
+            else if (action === "dns-blocker-on")
+                DnsBlocker.setEnabled(true);
+            else if (action === "dns-blocker-off")
+                DnsBlocker.setEnabled(false);
             else if (action.indexOf("bt-forget:") === 0)
                 Bt.forgetAddress(action.substring(10));
             else if (action.indexOf("kde-unpair:") === 0)

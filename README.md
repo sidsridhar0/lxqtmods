@@ -633,7 +633,11 @@ past the neighbour and making a new workspace at the end.
   autoconnect switch. Each device also gets its addressing — IPv4, IPv6,
   gateway, DNS, MAC, MTU, link rate — and an **IP configuration** editor that
   switches between DHCP and a hand-set address, gateway and DNS, or just
-  overrides DNS while leaving the rest automatic. Scriptable with
+  overrides DNS while leaving the rest automatic. An optional DNS filter uses
+  AdGuard Family DNS for adult-content filtering and blocks YouTube domains
+  through `/etc/hosts`; it applies to saved Wi-Fi and wired profiles and can be
+  turned off to restore their previous DNS settings. Reapply it after adding
+  new connections. VPNs and DNS-over-HTTPS may bypass it. Scriptable with
   `qs ipc call network status | list | rescan`
 - **Sound** — a *Sound* page for what plays and what listens. Every output and
   every input the machine has, each one named, with what it is doing right now

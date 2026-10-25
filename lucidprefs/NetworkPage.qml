@@ -60,9 +60,42 @@ Column {
     spacing: Theme.dp(26)
     Component.onCompleted: {
         Net.refresh();
+        DnsBlocker.refresh();
         if (page.wifi && Networking.wifiEnabled)
             page.wifi.scannerEnabled = true;
 
+    }
+
+    Connections {
+        target: Net
+
+        function onConnectionsChanged() {
+            DnsBlocker.refresh();
+        }
+    }
+
+    SettingCard {
+        title: "DNS FILTER"
+
+        SettingRow {
+            title: "Block YouTube and adult websites"
+            description: DnsBlocker.enabled ? "On for " + DnsBlocker.profiles + " saved Wi-Fi and wired connection(s). New connections need the filter reapplied. DNS-over-HTTPS and VPNs can bypass it." : "Uses AdGuard Family DNS for adult-content filtering and blocks YouTube domains on this machine. Applies to saved Wi-Fi and wired connections."
+            warning: DnsBlocker.error || DnsBlocker.warning
+            enabled: !DnsBlocker.busy && (DnsBlocker.enabled || (DnsBlocker.available && DnsBlocker.profiles > 0))
+            disabledReason: !DnsBlocker.loaded ? "Checking DNS filtering support." : (!DnsBlocker.enabled && !DnsBlocker.available ? "NetworkManager and pkexec are required." : (!DnsBlocker.enabled && DnsBlocker.profiles === 0 ? "No saved Wi-Fi or wired NetworkManager connections were found." : ""))
+
+            M3Button {
+                variant: DnsBlocker.enabled ? "tonal" : "filled"
+                text: DnsBlocker.busy ? "Applying…" : (DnsBlocker.enabled ? "Turn off" : "Turn on")
+                enabled: DnsBlocker.loaded && !DnsBlocker.busy && (DnsBlocker.enabled || (DnsBlocker.available && DnsBlocker.profiles > 0))
+                onClicked: {
+                    if (DnsBlocker.enabled)
+                        Prefs.askConfirm("Turn off DNS filtering?", "Lucid restores the DNS settings saved for these connections and removes its YouTube entries from /etc/hosts.", "Turn off", "dns-blocker-off");
+                    else
+                        Prefs.askConfirm("Turn on DNS filtering?", "This changes the DNS servers on saved Wi-Fi and wired connections and adds YouTube domains to /etc/hosts. Administrator authorization is required. DNS-over-HTTPS and VPNs can bypass the filter.", "Turn on", "dns-blocker-on");
+                }
+            }
+        }
     }
 
     SettingCard {
